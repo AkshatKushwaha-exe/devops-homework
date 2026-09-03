@@ -1,0 +1,11 @@
+# single-stage version, kept for the size comparison in the README
+FROM golang:1.22-alpine
+
+WORKDIR /src
+COPY go.mod ./
+RUN go mod download
+COPY main.go ./
+RUN CGO_ENABLED=0 go build -o /out/server main.go
+
+EXPOSE 8080
+CMD ["/out/server"]
