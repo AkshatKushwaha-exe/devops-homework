@@ -1,8 +1,17 @@
-# Linux Homework Tasks
+# Linux Fundamentals Homework
 
 **Akshat Kushwaha**
-DevOps — Linux Fundamentals
+**Enrollment Number:** `24bcs10060`
 3 September 2026
+
+Four tasks: the difference between the two kinds of link, the difference between the two commands for adding a user, reading logs with `journalctl`, and working through the command cheat sheet.
+
+| Task | Covers |
+|---|---|
+| [1](#task-1-soft-link--hard-link) | Soft links vs hard links — creating, deleting, and the two things a hard link cannot do |
+| [2](#task-2-adduser-vs-useradd) | `adduser` vs `useradd`, which one Ubuntu wants you to use, and creating a test user |
+| [3](#task-3-journalctl) | `journalctl` — what it is for, reading system and per-service logs |
+| [4](#task-4-linux-command-cheat-sheet) | The command cheat sheet, grouped by what each command is for |
 
 ---
 
@@ -1038,16 +1047,34 @@ Ctrl+R is the biggest time saver of the lot. Start typing any part of an old com
 
 ---
 
+## Summary
+
+| Requirement | Status |
+|---|---|
+| Learn the difference between soft and hard links | Done — inode, link count and `stat` evidence in Task 1 |
+| Learn the commands to create both | `ln target link` and `ln -s target link` |
+| Practise creating and deleting them | Done — including deleting the target to show which link survives |
+| Prepare it as an interview question | Written up at the end of Task 1 |
+| Learn the difference between `adduser` and `useradd` | Done — one is a Perl wrapper, the other the compiled binary it calls |
+| Understand which is preferred on Ubuntu and why | `adduser`, because it finishes the job; evidence in Task 2 |
+| Create a test user with the recommended command | Done — `devops_test` via `adduser`, with `useradd_test` as the contrast |
+| Learn what `journalctl` is used for | Done — what feeds the journal and why the metadata matters |
+| Learn how to view system and service logs | Done — by unit, boot, priority, time and arbitrary metadata |
+| Practise checking logs for a specific service | Done — `docker.service`, including a full stop/start cycle |
+| Review the command cheat sheet | Task 4 — grouped by purpose, with notes on the ones that caught me out |
+
+---
+
 ## Screenshots
 
 | | |
 |---|---|
-| The machine everything was run on | ![setup](./screenshots/01-linux/setup-hostnamectl.png) |
-| Task 1 — hard links vs soft links, start to finish | ![links](./screenshots/01-linux/task1-links.png) |
-| Task 2 — what `adduser` and `useradd` actually are | ![adduser](./screenshots/01-linux/task2-adduser-vs-useradd.png) |
-| Task 2 — `adduser`, start to finish | ![adduser run](./screenshots/01-linux/task2-adduser-run.png) |
-| Task 2 — plain `useradd`, and the cleanup | ![useradd](./screenshots/01-linux/task2-useradd-contrast.png) |
-| Task 3 — `journalctl` for a specific service | ![journalctl](./screenshots/01-linux/task3-journalctl-service.png) |
-| Task 3 — `journalctl` filters and metadata | ![filters](./screenshots/01-linux/task3-journalctl-filters.png) |
+| The machine everything was run on | ![setup](../screenshots/01-linux/setup-hostnamectl.png) |
+| Task 1 — hard links vs soft links, start to finish | ![links](../screenshots/01-linux/task1-links.png) |
+| Task 2 — what `adduser` and `useradd` actually are | ![adduser](../screenshots/01-linux/task2-adduser-vs-useradd.png) |
+| Task 2 — `adduser`, start to finish | ![adduser run](../screenshots/01-linux/task2-adduser-run.png) |
+| Task 2 — plain `useradd`, and the cleanup | ![useradd](../screenshots/01-linux/task2-useradd-contrast.png) |
+| Task 3 — `journalctl` for a specific service | ![journalctl](../screenshots/01-linux/task3-journalctl-service.png) |
+| Task 3 — `journalctl` filters and metadata | ![filters](../screenshots/01-linux/task3-journalctl-filters.png) |
 
 ---

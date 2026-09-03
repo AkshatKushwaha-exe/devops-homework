@@ -2,11 +2,11 @@
 
 **Akshat Kushwaha**
 
-All homework assignments for the DevOps module. Every command shown in these write-ups was run on the machine described below, and the output is what it printed.
+All homework assignments for the DevOps module. Each one lives in its own numbered folder with its write-up in `README.md`. Every command shown was run on the machine described below, and the output is what it printed.
 
 | # | Assignment | Deliverable |
 |---|---|---|
-| 01 | Linux Fundamentals — soft/hard links, `adduser` vs `useradd`, `journalctl`, command cheat sheet | [`DevOps-Homework-Answers.md`](./DevOps-Homework-Answers.md) |
+| 01 | Linux Fundamentals — soft/hard links, `adduser` vs `useradd`, `journalctl`, command cheat sheet | [`01-linux-fundamentals/`](./01-linux-fundamentals/) |
 | 02 | Shell Scripting — system information script | [`02-shell-scripting/`](./02-shell-scripting/) |
 | 03 | Networking — commands, output and explanations | [`03-networking/`](./03-networking/) |
 | 04 | Git — `commit -a -m` vs `commit -m`, cherry-pick | [`04-git/`](./04-git/) |
@@ -47,8 +47,8 @@ screenshots/
 ```
 DevOps/
 ├── README.md                       this file
-├── DevOps-Homework-Answers.md      01 - Linux fundamentals
-├── DevOps-Homework-Answers.docx    01 - same, formatted for submission
+├── 01-linux-fundamentals/
+│   └── README.md
 ├── 02-shell-scripting/
 │   ├── README.md
 │   └── sysinfo.sh
