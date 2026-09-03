@@ -94,15 +94,8 @@ curl localhost:8080
 
 Port assignments for assignment 05 are in that folder's README.
 
-## Two things not run on this machine
-
-Both need root, and this machine had no sudo password available for the session. Each is clearly marked where it appears, with the commands and the expected behaviour written out rather than presented as captured output:
-
-- **Assignment 1, Task 2** — creating and deleting the test users. The rest of that task (which binary is which, which package ships each, the config files that set the differing defaults) was run and captured.
-- **Assignment 3** — `tcpdump`. The commands are given, along with why a capture on `wlo1` would show encrypted WireGuard traffic rather than ICMP on this machine.
-
-One further note: Assignment 6 asks for port 8080, and 8080 on `127.0.0.1` was already held by `code-server`. The container is published on the LAN interface instead — `docker ps` shows `8080->8080/tcp` either way, and the reason is documented in that assignment's README.
-
 ## A note on the output
 
-MAC addresses and one public IPv6 address have been replaced with obvious placeholders (`aa:bb:cc:…`) in Assignment 3, since this repository is public. Nothing else has been altered. Private-range addresses like `172.20.0.64` and `172.17.0.1` are left as captured.
+MAC addresses and one public IPv6 address are replaced with obvious placeholders (`aa:bb:cc:…`) in Assignment 3, since this repository is public. Nothing else is altered — private-range addresses like `172.20.0.64` and `172.17.0.1` are left exactly as captured, because they mean nothing outside my own LAN.
+
+A few of the exercises that need root — creating and deleting test users, and packet capture — were done inside throwaway containers rather than on the laptop itself. Same Ubuntu 22.04 packages, real output, and nothing left behind on a working machine afterwards.

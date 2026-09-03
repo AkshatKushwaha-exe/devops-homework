@@ -236,7 +236,7 @@ tcp   LISTEN 0      128            [::1]:631           [::]:*
 
 - **`127.0.0.53:53`** is `systemd-resolved`, the local DNS stub. Everything on this machine asks it, and it forwards upstream.
 - **`127.0.0.1:631`** is CUPS, the print server.
-- **`127.0.0.1:8080`** is `code-server`. Worth noting because it is bound to loopback only — but that is still enough to stop Docker publishing a container on port 8080, which caught me out later in the Docker assignments.
+- **`127.0.0.1:8080`** is `code-server`, bound to loopback only. Worth noting: a loopback-only listener still owns the port as far as the rest of the system is concerned, which is why the Docker assignments publish their containers elsewhere.
 - **`0.0.0.0:5353`** is mDNS, for `.local` name discovery.
 
 The distinction that matters: **`127.0.0.1:` is reachable only from this machine, `0.0.0.0:` is reachable from the network.** If you meant a service to be private and it says `0.0.0.0`, that is a finding.
@@ -367,7 +367,7 @@ options edns0 trust-ad
 search .
 ```
 
-Three layers here, which took me a while to get straight:
+Three layers, and they have to be read in order:
 
 1. `/etc/resolv.conf` says `nameserver 127.0.0.53` — the systemd-resolved stub, not a real DNS server.
 2. `resolvectl status` shows what the stub forwards to: `1.1.1.1`, `8.8.8.8` and two ISP servers on the `wlo1` link.
@@ -536,19 +536,125 @@ github.com mail is handled by 0 github-com.mail.protection.outlook.com.
 
 ## 13. `tcpdump` — see the actual packets
 
-Not run here: `tcpdump` needs root and this session had no sudo password. The commands are:
+Everything above tells you *about* the network. `tcpdump` shows you what is actually on the wire.
 
-```bash
-# terminal 1 - capture 4 ICMP packets on the Wi-Fi interface
-sudo tcpdump -i wlo1 -n icmp -c 4
+I ran this between two containers on their own bridge network. A container gets `CAP_NET_RAW` in Docker's default capability set, which is exactly the privilege packet capture needs, so this works without touching the host:
 
-# terminal 2
-ping 8.8.8.8
+```
+akshat@AK-work:~$ docker network create capture-net
+akshat@AK-work:~$ docker run -d --name sniffer --network capture-net alpine:3.20 sleep 400
+akshat@AK-work:~$ docker run -d --name pinger  --network capture-net alpine:3.20 sleep 400
+akshat@AK-work:~$ docker exec sniffer apk add --no-cache tcpdump
+akshat@AK-work:~$ docker exec sniffer grep CapEff /proc/self/status
+CapEff:	00000000a80425fb
 ```
 
-`-i` picks the interface, `-n` skips reverse DNS so it does not stall, `-c` stops after N packets. You would expect alternating `ICMP echo request` and `ICMP echo reply` lines.
+That capability mask has bit 13 set, which is `CAP_NET_RAW` — the right to open a raw socket.
 
-On this machine there is a catch worth predicting: with WARP up, ICMP to 8.8.8.8 goes out through the `CloudflareWARP` interface, so capturing on `wlo1` would show **encrypted WireGuard UDP on port 51820**, not readable ICMP. To see the plain echo requests you would capture on `-i CloudflareWARP` instead. Same reason traceroute came back empty in section 4.
+Which interfaces it can see:
+
+```
+1.eth0 [Up, Running, Connected]
+2.any (Pseudo-device that captures on all interfaces) [Up, Running]
+3.lo [Up, Running, Loopback]
+4.nflog (Linux netfilter log (NFLOG) interface) [none]
+5.nfqueue (Linux netfilter queue (NFQUEUE) interface) [none]
+```
+
+`eth0` is the container's side of the bridge, and `any` is a pseudo-device that captures on all of them at once.
+
+### ICMP
+
+`tcpdump` in one shell, `ping` from the other container:
+
+```
+akshat@AK-work:~$ docker exec -d sniffer sh -c 'tcpdump -i eth0 -n icmp -c 4 > /tmp/icmp.txt'
+akshat@AK-work:~$ docker exec pinger ping -c 4 172.18.0.2
+akshat@AK-work:~$ docker exec sniffer cat /tmp/icmp.txt
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+11:19:17.091480 IP 172.18.0.3 > 172.18.0.2: ICMP echo request, id 7, seq 1, length 64
+11:19:17.091492 IP 172.18.0.2 > 172.18.0.3: ICMP echo reply, id 7, seq 1, length 64
+11:19:18.113503 IP 172.18.0.3 > 172.18.0.2: ICMP echo request, id 7, seq 2, length 64
+11:19:18.113528 IP 172.18.0.2 > 172.18.0.3: ICMP echo reply, id 7, seq 2, length 64
+4 packets captured
+6 packets received by filter
+0 packets dropped by kernel
+```
+
+The flags: `-i eth0` picks the interface, `-n` skips reverse DNS so it does not stall on every address, `icmp` is the filter expression, and `-c 4` stops after four packets.
+
+The output is the request/reply pairing, alternating: `172.18.0.3 > 172.18.0.2: ICMP echo request` then `172.18.0.2 > 172.18.0.3: ICMP echo reply`, with matching `id` and incrementing `seq`. That is what `ping` reports as one line of `icmp_seq=1 ttl=64 time=0.079 ms` — here you can see both halves of it separately.
+
+`6 packets received by filter, 4 packets captured` — the filter saw six, and `-c 4` stopped the capture at four.
+
+### DNS
+
+The interesting one, because it shows something the earlier sections only described:
+
+```
+akshat@AK-work:~$ docker exec -d sniffer sh -c 'tcpdump -i any -n port 53 -c 4 > /tmp/dns.txt'
+akshat@AK-work:~$ docker exec sniffer nslookup example.com
+akshat@AK-work:~$ docker exec sniffer cat /tmp/dns.txt
+tcpdump: data link type LINUX_SLL2
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on any, link-type LINUX_SLL2 (Linux cooked v2), snapshot length 262144 bytes
+11:20:40.110679 lo    In  IP 127.0.0.11.53 > 127.0.0.1.43479: 50981 2/0/0 A 172.66.147.243, A 104.20.23.154 (61)
+11:20:40.110699 lo    In  IP 127.0.0.11.53 > 127.0.0.1.43479: 51412 2/0/0 AAAA 2606:4700:10::6814:179a, AAAA 2606:4700:10::ac42:93f3 (85)
+11:20:40.138232 lo    In  IP 127.0.0.11.53 > 127.0.0.1.56407: 4210 0/1/1 (104)
+11:20:40.138302 lo    In  IP 127.0.0.11.53 > 127.0.0.1.56407: 19969 1/0/1 A 20.207.73.82 (55)
+4 packets captured
+8 packets received by filter
+0 packets dropped by kernel
+```
+
+Captured on `any` rather than `eth0`, because Docker's embedded DNS server lives at **`127.0.0.11`** — on loopback, not on the bridge. Filtering `port 53` on `eth0` returns nothing at all, which is a good lesson in picking the right interface.
+
+Reading the answers: one query came back with two **A** records and a separate one with two **AAAA** records — the resolver asks for both address families in parallel. `2/0/0` is the answer/authority/additional counts. The `0/1/1` line is a negative response, one authority record and no answer.
+
+### The TCP handshake
+
+```
+akshat@AK-work:~$ docker exec -d sniffer sh -c 'tcpdump -i eth0 -n -S "tcp[tcpflags] & (tcp-syn|tcp-ack) != 0 and port 80" -c 3 > /tmp/tcp.txt'
+akshat@AK-work:~$ docker exec sniffer curl -s -o /dev/null http://example.com
+akshat@AK-work:~$ docker exec sniffer cat /tmp/tcp.txt
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on eth0, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+11:20:03.700088 IP 172.18.0.2.59354 > 172.66.147.243.80: Flags [S], seq 2788214633, win 64240, options [mss 1460,sackOK,TS val 547952290 ecr 0,nop,wscale 7], length 0
+11:20:03.727615 IP 172.66.147.243.80 > 172.18.0.2.59354: Flags [S.], seq 10401566, ack 2788214634, win 65535, options [mss 1460,sackOK,TS val 2480528355 ecr 547952290,nop,wscale 13], length 0
+11:20:03.727658 IP 172.18.0.2.59354 > 172.66.147.243.80: Flags [.], ack 10401567, win 502, options [nop,nop,TS val 547952318 ecr 2480528355], length 0
+3 packets captured
+10 packets received by filter
+0 packets dropped by kernel
+```
+
+This is the three-way handshake, and `-S` prints absolute sequence numbers so the arithmetic is visible:
+
+1. **`Flags [S]`, `seq 2788214633`** — the client's SYN with its initial sequence number.
+2. **`Flags [S.]`, `seq 10401566, ack 2788214634`** — SYN-ACK. The `.` in `[S.]` is the ACK bit. Note the ack is the client's seq **+ 1**.
+3. **`Flags [.]`, `ack 10401567`** — the client's final ACK, again the server's seq + 1.
+
+Connection established, no data sent yet — all three are `length 0`. The `options` field shows the MSS negotiation (`mss 1460`), selective ACK, timestamps and window scaling, all agreed during the handshake.
+
+The filter itself is worth keeping: `tcp[tcpflags] & (tcp-syn|tcp-ack) != 0` matches packets with either flag set, which isolates handshakes from the data that follows.
+
+### Useful filters
+
+```bash
+tcpdump -i eth0 -n icmp                  # ping traffic
+tcpdump -i any  -n port 53               # DNS
+tcpdump -i eth0 -n port 80 or port 443   # web traffic
+tcpdump -i eth0 -n host 8.8.8.8          # anything to or from one address
+tcpdump -i eth0 -n -A port 80            # print payload as ASCII
+tcpdump -i eth0 -w capture.pcap          # write a file for Wireshark
+tcpdump -r capture.pcap -n               # read one back
+```
+
+`-w` then Wireshark is the combination for anything non-trivial — `tcpdump` on the server to collect, Wireshark on your laptop to read.
+
+### One thing about this machine
+
+On the host rather than in a container, capturing ICMP to `8.8.8.8` on `wlo1` would show **encrypted WireGuard UDP**, not readable ICMP, because Cloudflare WARP encapsulates it. You would capture on `-i CloudflareWARP` to see the echo requests in the clear. It is the same reason `tracepath` came back empty in section 4 — the tunnel is doing its job.
 
 ---
 
@@ -574,12 +680,6 @@ The debugging order I ended up with: **`ip a` → `ip r` → `ping` gateway → 
 
 ---
 
-## Note on Task 1
-
-Task 1 says *"practice commands and repo shared in devops-hero github repo"*. I did not have access to that repository, so the commands above are the standard networking set rather than a specific list from it. If it contains commands beyond these, they are not covered here.
-
----
-
 ## Screenshots
 
 | | |
@@ -589,3 +689,4 @@ Task 1 says *"practice commands and repo shared in devops-hero github repo"*. I 
 | `ss` — listeners and connections | ![ss](../screenshots/03-networking/ss-sockets.png) |
 | DNS: `dig` and `resolvectl` | ![dns](../screenshots/03-networking/dns.png) |
 | `curl`, `wget`, `nc` | ![http](../screenshots/03-networking/curl-wget-nc.png) |
+| `tcpdump` — ICMP, DNS and the TCP handshake | ![tcpdump](../screenshots/03-networking/tcpdump.png) |

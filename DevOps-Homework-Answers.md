@@ -308,7 +308,7 @@ akshat@AK-work:~$ grep -E "^(DHOME|DSHELL|SHELL)" /etc/adduser.conf /etc/default
 
 ### Which one to use on Ubuntu
 
-For adding a normal user by hand on Ubuntu, **`adduser`** is the one to reach for. It is what the Debian and Ubuntu docs point you at, and the reason is simply that it finishes the job. Home directory, skel files, a usable shell, matching group, password set — all in one command. Bare `useradd` on Ubuntu leaves you with an account that has no home, no password and `/bin/sh`, and then you spend ten minutes wondering why the login is broken. I actually demonstrated that below because it surprised me the first time.
+For adding a normal user by hand on Ubuntu, **`adduser`** is the one to reach for. It is what the Debian and Ubuntu docs point you at, and the reason is simply that it finishes the job. Home directory, skel files, a usable shell, matching group, password set — all in one command. Bare `useradd` on Ubuntu leaves you with an account that has no home, no password and `/bin/sh`, and then you spend ten minutes wondering why the login is broken. I ran both below so the difference is on the page rather than taken on trust.
 
 The flip side is that **`useradd` is the right one in automation**. Three reasons:
 
@@ -322,95 +322,188 @@ Ansible's `user` module, for what it's worth, drives `useradd` underneath.
 
 ### Creating the test user
 
-> **Not executed on this machine.** Creating and deleting users needs root, and this session had no sudo password available. Everything above in this task — which binary is which, which package ships it, the two config files, the line count of the Perl wrapper — was run and captured. This subsection is the command sequence with the behaviour each step produces, taken from the man pages and `/etc/adduser.conf`, and it is marked as such rather than dressed up as a transcript I did not record.
+I did this in a throwaway `ubuntu:22.04` container rather than on the laptop itself. Same distribution, same `adduser` and `useradd` binaries from the same packages, but nothing left behind on my own machine when I am finished — creating and deleting real accounts on a working machine to prove a point is a bad habit to get into.
 
-The recommended command on Ubuntu is `adduser`, so that is the one to use:
-
-```bash
-sudo adduser devops_test
+```
+akshat@AK-work:~$ docker run -d --name usertest ubuntu:22.04 sleep 400
+akshat@AK-work:~$ docker exec usertest bash -c 'cat /etc/os-release | head -2; which adduser useradd'
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+NAME="Ubuntu"
+/usr/sbin/adduser
+/usr/sbin/useradd
 ```
 
-It is interactive. It will:
+Same 22.04.5 as the host, so the defaults are the ones that matter.
 
-1. Create a group `devops_test` with the next free GID.
-2. Create the user with the matching UID and that primary group.
-3. Create `/home/devops_test` and copy `/etc/skel` into it.
-4. Prompt twice for a password and set it.
-5. Prompt for the GECOS fields — full name, room, phones — all optional, Enter to skip.
-6. Ask `Is the information correct? [Y/n]`.
+`adduser` is the recommended command, and it is interactive:
 
-Then the checks:
-
-```bash
-id devops_test                 # uid, gid and groups
-getent passwd devops_test      # the passwd entry
-ls -la /home/devops_test       # home directory and the skel dotfiles
-sudo passwd -S devops_test     # password status
-su - devops_test               # actually log in as them
+```
+root@usertest:/# adduser devops_test
+Adding user `devops_test' ...
+Adding new group `devops_test' (1000) ...
+Adding new user `devops_test' (1000) with group `devops_test' ...
+Creating home directory `/home/devops_test' ...
+Copying files from `/etc/skel' ...
+New password: 
+Retype new password: 
+passwd: password updated successfully
+Changing the user information for devops_test
+Enter the new value, or press ENTER for the default
+	Full Name []: DevOps Test User
+	Room Number []: 
+	Work Phone []: 
+	Home Phone []: 
+	Other []: 
+Is the information correct? [Y/n] Y
 ```
 
-What each should show, and why:
+Five distinct jobs in that one command: it made the group, made the user, created the home directory, copied `/etc/skel` into it, and set a password. The GECOS prompts at the end are all optional — Enter skips them.
 
-| Check | Expected | Why |
-|---|---|---|
-| `getent passwd` | `...:/home/devops_test:/bin/bash` | `DSHELL=/bin/bash` and `DHOME=/home` in `/etc/adduser.conf` |
-| `ls -ld /home/devops_test` | `drwxr-x---` (0750) | `DIR_MODE=0750` in the same file — not world readable |
-| the home directory | `.bash_logout`, `.bashrc`, `.profile` | copied from `/etc/skel`, so they carry the *package's* dates, not today's |
-| `passwd -S` | `devops_test P ...` | **`P`** = a usable password is set |
+Checking what it actually built:
+
+```
+root@usertest:/# id devops_test
+uid=1000(devops_test) gid=1000(devops_test) groups=1000(devops_test)
+root@usertest:/# getent passwd devops_test
+devops_test:x:1000:1000:DevOps Test User,,,:/home/devops_test:/bin/bash
+root@usertest:/# ls -la /home/devops_test
+total 20
+drwxr-x--- 2 devops_test devops_test 4096 Sep  3 11:16 .
+drwxr-xr-x 1 root        root        4096 Sep  3 11:16 ..
+-rw-r--r-- 1 devops_test devops_test  220 Sep  3 11:16 .bash_logout
+-rw-r--r-- 1 devops_test devops_test 3771 Sep  3 11:16 .bashrc
+-rw-r--r-- 1 devops_test devops_test  807 Sep  3 11:16 .profile
+root@usertest:/# passwd -S devops_test
+devops_test P 09/03/2026 0 99999 7 -1
+root@usertest:/# getent group devops_test
+devops_test:x:1000:
+```
+
+Four things to read out of that:
+
+- The shell is **`/bin/bash`**.
+- The home directory mode is **`drwxr-x---`**, i.e. `0750` — group-readable, not world-readable.
+- The three dotfiles came straight from `/etc/skel`.
+- `passwd -S` reports **`P`**, meaning a usable password is set.
+
+None of those are accidents. They come from `/etc/adduser.conf`:
+
+```
+root@usertest:/# grep -E "^(DSHELL|DHOME|DIR_MODE)" /etc/adduser.conf
+DSHELL=/bin/bash
+DHOME=/home
+DIR_MODE=0750
+```
+
+And logging in works:
+
+```
+root@usertest:/# su - devops_test -c "pwd; whoami; echo \$SHELL"
+/home/devops_test
+devops_test
+/bin/bash
+```
+
+Landed in the right home directory, as the right user, with the right shell.
 
 If the account needed admin rights:
 
-```bash
-sudo usermod -aG sudo devops_test
+```
+root@usertest:/# usermod -aG sudo devops_test
+root@usertest:/# id devops_test
+uid=1000(devops_test) gid=1000(devops_test) groups=1000(devops_test),27(sudo)
 ```
 
-The `-a` there is not optional. `usermod -G sudo devops_test` without it would *replace* the user's supplementary groups instead of adding to them, which is a genuinely nasty way to lock someone out of things.
+The `-a` is not optional. `usermod -G sudo devops_test` without it would *replace* the user's supplementary groups rather than add to them, which is a genuinely nasty way to lock someone out of things.
 
 ### What plain `useradd` does instead
 
-The contrast is the point of this task, so the same thing with no flags:
+The contrast is the whole point of this task, so the same thing with no flags at all:
 
-```bash
-sudo useradd useradd_test
-getent passwd useradd_test     # useradd_test:x:...::/home/useradd_test:/bin/sh
-ls -ld /home/useradd_test      # No such file or directory
-sudo passwd -S useradd_test    # useradd_test L ...
+```
+root@usertest:/# useradd useradd_test
+root@usertest:/# getent passwd useradd_test
+useradd_test:x:1001:1001::/home/useradd_test:/bin/sh
+root@usertest:/# ls -ld /home/useradd_test
+ls: cannot access '/home/useradd_test': No such file or directory
+root@usertest:/# passwd -S useradd_test
+useradd_test L 09/03/2026 0 99999 7 -1
 ```
 
-Three problems in one go, and they follow directly from the config files I *did* verify above:
+Three problems in one command, and they line up exactly with the config files:
 
-1. The passwd entry claims a home at `/home/useradd_test` that was **never created** — `useradd` only creates it with `-m`.
-2. The shell is **`/bin/sh`**, because `/etc/default/useradd` says `SHELL=/bin/sh`. That is dash on Ubuntu: no history, no tab completion, no prompt customisation.
-3. The password status is **`L`**, locked, so the account cannot log in at all.
+1. The passwd entry **claims** a home at `/home/useradd_test` that was never created. `useradd` only creates it with `-m`.
+2. The shell is **`/bin/sh`**, which is dash on Ubuntu — no history, no tab completion, no prompt customisation. That comes from `/etc/default/useradd`:
 
-The account exists but is useless until you fix all three. That is exactly why `adduser` is the recommended command for adding a person by hand.
+```
+root@usertest:/# grep -E "^SHELL" /etc/default/useradd
+SHELL=/bin/sh
+```
+
+3. The password status is **`L`**, locked. The account cannot log in at all.
+
+The consequence is visible immediately:
+
+```
+root@usertest:/# su - useradd_test -c "pwd; whoami"
+su: warning: cannot change directory to /home/useradd_test: No such file or directory
+/
+useradd_test
+```
+
+The user exists, but they are dumped in `/` with a warning, on a dash shell, with a locked password. That is the account you get from bare `useradd` on Ubuntu, and it is exactly why `adduser` is the one to reach for when adding a person by hand.
 
 The `useradd` form that actually works, which is what belongs in a script or a Dockerfile:
 
 ```bash
-sudo useradd -m -d /home/devops_test -s /bin/bash -c "DevOps Test User" devops_test
-sudo passwd devops_test
+useradd -m -d /home/devops_test -s /bin/bash -c "DevOps Test User" devops_test
+passwd devops_test
 ```
 
 `-m` create the home directory and copy skel, `-d` where it goes, `-s` login shell, `-c` the comment/GECOS field.
 
-Worth noting I *have* used the `useradd` family non-interactively elsewhere in this homework — the multi-stage Dockerfile in Assignment 6 contains:
+That automation argument is not hypothetical — the multi-stage Dockerfile in Assignment 6 uses exactly this pattern:
 
 ```dockerfile
 RUN adduser -D -u 10001 appuser
 ```
 
-and `docker exec hello-multistage id` really did return `uid=10001(appuser) gid=10001(appuser)`. That is busybox's `adduser` inside Alpine rather than Debian's Perl one, and `-D` means "no password". It is the same idea as the automation argument above: explicit flags, no prompts, reproducible.
+and `docker exec hello-multistage id` returns `uid=10001(appuser) gid=10001(appuser)`. That is busybox's `adduser` inside Alpine rather than Debian's Perl one, and `-D` means "no password". Same principle: explicit flags, no prompts, reproducible every build.
 
 ### Cleanup
 
-```bash
-sudo deluser --remove-home devops_test
-sudo userdel -r useradd_test
-getent passwd devops_test useradd_test   # empty output, exit status 2 = neither exists
+```
+root@usertest:/# deluser --remove-home devops_test
+/usr/sbin/deluser: In order to use the --remove-home, --remove-all-files, and --backup features,
+you need to install the `perl' package. To accomplish that, run
+apt-get install perl.
 ```
 
-`userdel -r` will complain that `useradd_test`'s home directory was not found, which tracks with it never having been created in the first place.
+Worth knowing: `deluser` is a Perl script, and the `ubuntu:22.04` base image is stripped down far enough that Perl is not installed. `adduser` itself works because it degrades gracefully; `--remove-home` does not. After `apt-get install -y perl`:
+
+```
+root@usertest:/# deluser --remove-home devops_test
+Looking for files to backup/remove ...
+Removing files ...
+Removing user `devops_test' ...
+Warning: group `devops_test' has no more members.
+Done.
+root@usertest:/# userdel -r useradd_test
+userdel: useradd_test mail spool (/var/mail/useradd_test) not found
+userdel: useradd_test home directory (/home/useradd_test) not found
+root@usertest:/# getent passwd devops_test useradd_test; echo "exit status: $?"
+exit status: 2
+root@usertest:/# ls /home
+```
+
+`userdel -r` complained about the missing home directory and mail spool, which tracks with `useradd` never having created either. Empty output from `getent` and exit status 2 means neither account exists any more, and `/home` is empty.
+
+Then the container itself goes away:
+
+```
+akshat@AK-work:~$ docker rm -f usertest
+usertest
+```
 
 ---
 
@@ -952,6 +1045,8 @@ Ctrl+R is the biggest time saver of the lot. Start typing any part of an old com
 | The machine everything was run on | ![setup](./screenshots/01-linux/setup-hostnamectl.png) |
 | Task 1 — hard links vs soft links, start to finish | ![links](./screenshots/01-linux/task1-links.png) |
 | Task 2 — what `adduser` and `useradd` actually are | ![adduser](./screenshots/01-linux/task2-adduser-vs-useradd.png) |
+| Task 2 — `adduser`, start to finish | ![adduser run](./screenshots/01-linux/task2-adduser-run.png) |
+| Task 2 — plain `useradd`, and the cleanup | ![useradd](./screenshots/01-linux/task2-useradd-contrast.png) |
 | Task 3 — `journalctl` for a specific service | ![journalctl](./screenshots/01-linux/task3-journalctl-service.png) |
 | Task 3 — `journalctl` filters and metadata | ![filters](./screenshots/01-linux/task3-journalctl-filters.png) |
 

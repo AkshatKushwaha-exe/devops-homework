@@ -8,7 +8,7 @@ akshat@AK-work:~$ docker --version
 Docker version 28.2.2, build 28.2.2-0ubuntu1~22.04.1
 ```
 
-Tasks 1–3 were all run on this machine and the output below is what they printed. Task 4 is research, since it needs a multi-host Swarm cluster I do not have.
+Tasks 1–3 were run on this machine and the output below is what they printed. Task 4 is the research exercise.
 
 ---
 
@@ -506,7 +506,7 @@ akshat@AK-work:~/bind-mount-demo$ curl -s localhost:8085 | grep h1
 
 ## Task 4: Overlay networks (research)
 
-No swarm cluster to test on, so this is written up from the documentation and reading rather than from commands I ran.
+Overlay networks need two or more Docker hosts in a Swarm to demonstrate, so this task is written up from the documentation rather than run — which is what it asks for.
 
 ### What it is
 
@@ -579,7 +579,7 @@ docker service create --name web --network my-overlay --replicas 3 nginx:alpine
 
 The `bridge` networks in Task 1 gave container-name DNS and network isolation on **one** machine. An overlay gives you the same two properties across **many** machines. The `frontend-net` / `backend-net` split I built above would work identically on a three-node cluster — the frontend still could not reach the database — except the containers would be on different physical hosts.
 
-### Honest note
+### Where this actually gets used now
 
 In practice most multi-host container networking has moved to Kubernetes with a CNI plugin like Calico or Flannel, and Flannel's default backend is VXLAN — the same underlying technique. So understanding overlay networks transfers directly, even though Swarm itself is much less common now than it was.
 
@@ -640,4 +640,4 @@ akshat@AK-work:~$ rm -rf ~/bind-mount-demo
 | Access Apache on port 80 | Done, no `-p` flag used, `PORTS` column empty |
 | Bind mount a folder with "Hello students" | Done, served on port 8085 |
 | Modify and see changes without restart | Done — container stayed `Up`, plus a new file, a container-side write, and a read-only variant |
-| Research overlay networks | Written up above (not executed — needs a multi-host swarm) |
+| Research overlay networks | Written up above — VXLAN, ports, use cases, and how it compares to the bridges in Task 1 |

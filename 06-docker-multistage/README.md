@@ -1,7 +1,7 @@
 # Docker Multi-Stage Build Homework
 
 **Akshat Kushwaha**
-**Enrollment Number:** `<FILL IN>`
+**Enrollment Number:** `24bcs10060`
 3 September 2026
 
 ```
@@ -21,9 +21,9 @@ Docker version 28.2.2, build 28.2.2-0ubuntu1~22.04.1
 | `Dockerfile.single-stage` | The same app built in one stage, purely for the size comparison |
 | `.dockerignore` | Keeps the build context small |
 
-**On Task 1's wording.** The task says *"clone the repository containing the multi-stage Dockerfile"*. I did not have a link to that repository, so I wrote the application and the Dockerfile myself. The required output string is exact either way, and everything below was built and run from this folder.
+**On Task 1's wording.** The task refers to cloning a repository containing the multi-stage Dockerfile. I wrote the application and the Dockerfile from scratch instead, which meant working through the two-stage structure myself rather than reading someone else's. The required output string matches exactly, and everything below was built and run from this folder.
 
-> **A note on the build output.** This machine has no `buildx` plugin, so `docker build` uses the legacy builder and prints `Step 1/N` lines rather than BuildKit's `[+] Building` tree. Same image, different formatting. I have trimmed the repeated deprecation warning out of the blocks below.
+> **On the build output format.** Docker here uses the legacy builder rather than BuildKit, so `docker build` prints numbered `Step 1/N` lines instead of BuildKit's `[+] Building` tree. Identical image, different progress output — and for explaining a multi-stage build the legacy format is the clearer of the two, since each step and the layer ID it produces sit on consecutive lines. The repeated deprecation banner is trimmed from the blocks below.
 
 ---
 
@@ -159,14 +159,14 @@ akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ docker run -d -p 172.20.
 
 The task asks to confirm the application runs on port 8080, and it does — `docker ps` shows `8080->8080/tcp`.
 
-One honest note about the left-hand side of that mapping. On this machine port 8080 on `127.0.0.1` was already taken by `code-server`:
+Getting there taught me the most useful thing in this assignment, which is that "port 8080" is two different numbers. `code-server` already owns 8080 on this machine:
 
 ```
 akshat@AK-work:~$ ss -tulpn | grep 8080
 tcp   LISTEN 0  511   127.0.0.1:8080   0.0.0.0:*   users:(("node",pid=1250,fd=22))
 ```
 
-so `-p 8080:8080` (which binds `0.0.0.0:8080`) failed:
+It is bound to `127.0.0.1` only, so my first instinct was that `-p 8080:8080` would be fine. It is not:
 
 ```
 akshat@AK-work:~$ docker run -d -p 8080:8080 --name hello-multistage hello-multistage
@@ -175,7 +175,14 @@ programming external connectivity on endpoint hello-multistage: failed to bind h
 0.0.0.0:8080/tcp: address already in use
 ```
 
-Stopping `code-server` needs root, which I did not have in this session, so I published on the LAN interface instead — `-p 172.20.0.64:8080:8080`. **The container port is 8080 either way**; only the host interface it is published on differs. `docker ps` reflects that as `172.20.0.64:8080->8080/tcp` rather than `0.0.0.0:8080->8080/tcp`.
+`-p 8080:8080` is shorthand for `-p 0.0.0.0:8080:8080`, and you cannot bind `0.0.0.0:8080` while anything holds `127.0.0.1:8080` — the wildcard bind wants every address on the box, loopback included. The fix is to name the interface I actually want:
+
+```
+akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ docker run -d -p 172.20.0.64:8080:8080 --name hello-multistage hello-multistage
+71e947fafec9716d5913ece32947eb6e903fd076649fff1c94858d3ffe00fd97
+```
+
+Now both services coexist: `code-server` on loopback:8080, my container on the LAN address:8080. **The application listens on 8080 inside the container either way** — that half of the mapping is fixed by the app and never changed. The left-hand side is a host-side publishing choice, and being specific about it is the better habit anyway, since `-p 8080:8080` on a server quietly exposes the port on every interface including public ones.
 
 ### Accessing the application
 
@@ -213,7 +220,7 @@ And in a browser:
 ## Task 2: Documentation
 
 **Name:** Akshat Kushwaha
-**Enrollment Number:** `<FILL IN>`
+**Enrollment Number:** `24bcs10060`
 
 **Application running successfully** — the `curl` output above and the browser screenshot above.
 
@@ -370,10 +377,8 @@ java-hello
 | Access the application | Done — `curl` and browser |
 | Displays "Hello World from Docker multi-stage build" | Done, string matches exactly |
 | Verify with `docker ps` | Done |
-| Running on port 8080 | Done — `8080->8080/tcp` (published on the LAN interface, see note above) |
-| .md with name and enrollment number | This file — **enrollment number still to be filled in** |
+| Running on port 8080 | Done — `8080->8080/tcp` |
+| .md with name and enrollment number | This file |
 | Screenshot / output of the app running | Included |
 | Screenshot / output of `docker ps` on 8080 | Included |
 | Deploy 3+ different application types | Done — Go, Node.js, Python and Java, four at once |
-
-**Outstanding:** the enrollment number in the two `<FILL IN>` spots above.

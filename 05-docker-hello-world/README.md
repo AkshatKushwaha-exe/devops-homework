@@ -12,14 +12,7 @@ akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker compose version
 Docker Compose version v5.1.0
 ```
 
-> **A note on the build output below.** This machine does not have the `buildx` plugin installed, so `docker build` falls back to the legacy builder and prints `Step 1/N` lines rather than BuildKit's `[+] Building` tree. Every build below shows that legacy format. It builds the same image either way; only the output formatting differs. Docker does warn about it on each run:
->
-> ```
-> DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
->             Install the buildx component to build images with BuildKit:
-> ```
->
-> I have trimmed that repeated warning out of the blocks below to keep them readable.
+> **On the build output format.** Docker here uses the legacy builder rather than BuildKit, so `docker build` prints numbered `Step 1/N` lines and `Using cache` instead of BuildKit's `[+] Building` tree and `CACHED`. Identical images, different progress output. Docker prints a deprecation banner on every run, which I have trimmed from the blocks below to keep them readable.
 
 ## Folder structure
 

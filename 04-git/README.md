@@ -496,4 +496,4 @@ nothing to commit, working tree clean
 | Cherry-pick into main | Yes, landed as `bdeb1ce` |
 | Verify it is in main | Yes — footer present, `notes.md` and dark mode toggle absent |
 
-Two things I got wrong before running it, both corrected above: `-a` does stage **deletions** (I expected it to only handle edits), and `cherry-pick --abort` does **not** undo a clean `-n` pick.
+The two results worth carrying forward: `-a` stages **deletions**, not just edits — so a stray `rm` gets committed by a routine `git commit -a -m` — and `cherry-pick --abort` only works while a pick is genuinely mid-conflict, so a clean `-n` pick is undone with `git reset --hard` instead.
