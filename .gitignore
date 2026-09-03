@@ -21,3 +21,6 @@ Thumbs.db
 
 # Local editor/tool config
 .claude/
+
+# Original assignment briefs - kept locally, not published
+assignment files/
