@@ -1,0 +1,12 @@
+# Phase: Succeeded. Container does its work, exits 0, and is not restarted
+# because restartPolicy is Never. `kubectl get pods` shows STATUS=Completed.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-succeeded
+spec:
+  restartPolicy: Never
+  containers:
+    - name: batch-job
+      image: busybox:1.36
+      command: ["sh", "-c", "echo 'work done'; exit 0"]

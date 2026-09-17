@@ -1,0 +1,43 @@
+# Three nginx Pods. Each serves a page naming its own Pod, so a repeated request
+# through the Service shows the load balancing rather than just "it worked".
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app-nodeport
+  labels:
+    app: web-nodeport
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-nodeport
+  template:
+    metadata:
+      labels:
+        app: web-nodeport
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "NodePort demo - served by ${POD_NAME} on ${POD_IP}" \
+                > /usr/share/nginx/html/index.html
+              exec nginx -g 'daemon off;'
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef: { fieldPath: metadata.name }
+            - name: POD_IP
+              valueFrom:
+                fieldRef: { fieldPath: status.podIP }
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          resources:
+            requests: { cpu: "20m", memory: "32Mi" }
+            limits:   { cpu: "100m", memory: "64Mi" }

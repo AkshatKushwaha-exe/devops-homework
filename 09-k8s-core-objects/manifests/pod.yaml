@@ -1,0 +1,17 @@
+# A bare Pod. Nothing recreates it if the node dies or you delete it —
+# which is exactly why you almost never create one of these directly.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx-standalone
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      resources:
+        requests: { cpu: "20m", memory: "32Mi" }
+        limits:   { cpu: "100m", memory: "64Mi" }

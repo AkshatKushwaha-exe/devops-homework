@@ -1,0 +1,21 @@
+# LoadBalancer builds on NodePort, which builds on ClusterIP. On a cloud provider
+# the cloud-controller-manager provisions a real external load balancer (ELB, GCLB,
+# Azure LB) and writes its address into status.loadBalancer.
+#
+# On a bare cluster with no cloud controller, EXTERNAL-IP stays <pending> forever.
+# `minikube tunnel` fakes that provisioning step locally.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service-lb
+  labels:
+    app: web-lb
+spec:
+  type: LoadBalancer
+  selector:
+    app: web-lb
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP

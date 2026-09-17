@@ -1,13 +1,14 @@
 # Shell Scripting Homework — System Information Script
 
-**Akshat Kushwaha**
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 3 September 2026
 
 Script: [`sysinfo.sh`](./sysinfo.sh)
 
 Ran everything on my Ubuntu machine:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ lsb_release -d
 Description:	Ubuntu 22.04.5 LTS
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ bash --version | head -1
@@ -37,7 +38,7 @@ I used command substitution (`$(...)`) rather than backticks because it nests pr
 
 ## Making it executable
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ ls -l sysinfo.sh
 -rw-r--r-- 1 akshat akshat 1264 Sep  3 00:15 sysinfo.sh
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ ./sysinfo.sh
@@ -51,7 +52,7 @@ I ran it before `chmod` on purpose, to see the actual failure. The `x` bits are 
 
 Syntax-checked it too, which costs nothing:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ bash -n sysinfo.sh
 ```
 
@@ -59,7 +60,7 @@ No output means no syntax errors. `-n` reads and parses the script without runni
 
 ## Running it
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ ./sysinfo.sh
 ========================================================
               SYSTEM INFORMATION REPORT
@@ -122,7 +123,7 @@ Report saved successfully.
 
 ## Checking that the file was actually written
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ ls -l system_reports/
 total 56
 -rw-rw-r-- 1 akshat akshat 54461 Sep  3 15:57 processes.txt
@@ -143,7 +144,7 @@ Two things worth pointing out here.
 
 Wanted to check the input handling actually did something rather than being decoration:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ ./sysinfo.sh
 ...
 Enter a name for the report directory: reports/sep03
@@ -171,7 +172,7 @@ The nested path worked because of `mkdir -p`. Without the `-p` it would have fai
 
 And pressing Enter at both prompts falls back to the defaults:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ ./sysinfo.sh
 ...
 Enter a name for the report directory: 
@@ -199,7 +200,7 @@ That is the `${REPORT_DIR:-system_reports}` syntax, which substitutes the defaul
 
 **`read -p` is bash, not POSIX — but the failure is not the one I expected.** POSIX only specifies `read [-r] var`, so I assumed running the script with `sh` would blow up on line 33. On Ubuntu 22.04 it does not:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ ls -l /bin/sh
 lrwxrwxrwx 1 root root 4 Feb 10  2026 /bin/sh -> dash
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ sh sysinfo.sh
@@ -214,14 +215,14 @@ File created      : mydir/myfile.txt
 
 Dash 0.5.11 has its own `-p` extension, so it accepts the flag and prints the prompt. Busybox `ash`, which is what `/bin/sh` is inside an Alpine container, accepts it too:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ docker run --rm alpine:3.20 sh -c 'echo hi | read -p "p: " X; echo "busybox ash: ok"'
 busybox ash: ok
 ```
 
 So the real lesson is narrower than "it breaks under sh": `read -p` is *not in the POSIX spec*, and whether it works depends entirely on which `sh` you happen to land on. The two most common ones both tolerate it, which is exactly what makes it a trap — it works on your machine and on Alpine, then fails on some stricter shell later. The shebang here is `#!/bin/bash`, so none of this affects the script as written. It only matters if someone invokes it as `sh sysinfo.sh`.
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ grep -n "read -p" sysinfo.sh
 33:read -p "Enter a name for the report directory: " REPORT_DIR
 34:read -p "Enter a name for the report file    : " REPORT_FILE
@@ -233,18 +234,27 @@ akshat@AK-work:~/Downloads/DevOps/02-shell-scripting$ grep -n "read -p" sysinfo.
 
 ## Screenshots
 
-| | |
-|---|---|
-| Making it executable, and the syntax check | ![chmod](../screenshots/02-shell/chmod-and-check.png) |
-| A full run with named values | ![run 1](../screenshots/02-shell/run1-named.png) |
-| Nested path, and the empty-input defaults | ![runs 2 and 3](../screenshots/02-shell/run2-run3.png) |
-| Verifying the file, and the `sh` portability test | ![verify](../screenshots/02-shell/verify-and-posix.png) |
+**Making it executable, and the syntax check**
+
+![chmod](../screenshots/02-shell/chmod-and-check.png)
+
+**A full run with named values**
+
+![run 1](../screenshots/02-shell/run1-named.png)
+
+**Nested path, and the empty-input defaults**
+
+![runs 2 and 3](../screenshots/02-shell/run2-run3.png)
+
+**Verifying the file, and the `sh` portability test**
+
+![verify](../screenshots/02-shell/verify-and-posix.png)
 
 ---
 
 ## Files
 
-```
+```text
 02-shell-scripting/
 ├── README.md
 └── sysinfo.sh

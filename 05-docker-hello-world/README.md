@@ -1,11 +1,12 @@
 # Docker Homework — Hello World Applications
 
-**Akshat Kushwaha**
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 3 September 2026
 
 Six Hello World web apps, each in its own folder with its own Dockerfile, all built and run as containers, and all six verified in a browser.
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker --version
 Docker version 28.2.2, build 28.2.2-0ubuntu1~22.04.1
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker compose version
@@ -16,7 +17,7 @@ Docker Compose version v5.1.0
 
 ## Folder structure
 
-```
+```text
 05-docker-hello-world/
 ├── nodejs-app/
 │   ├── Dockerfile
@@ -70,7 +71,7 @@ Gave each one a different host port so I could have them all running at once and
 
 Express server returning an HTML page.
 
-```
+```text
 $ cd ~/05-docker-hello-world/nodejs-app && docker build -t nodejs-hello .
 
 
@@ -119,7 +120,7 @@ Successfully built 11f32ca6b743
 Successfully tagged nodejs-hello:latest
 ```
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/nodejs-app$ docker run -d -p 3000:3000 --name nodejs-hello nodejs-hello
 af5d84ac469447062b7cc1de1b97439b31669f6592c8d9bfa2edd229b1ffb693
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/nodejs-app$ docker logs nodejs-hello
@@ -134,7 +135,7 @@ Verified in the browser at `http://localhost:3000`:
 
 **Note on the Dockerfile.** `COPY package*.json ./` and `npm install` come before `COPY server.js`. That ordering matters: Docker caches each layer, and a layer is only rebuilt if it or something above it changed. Since `server.js` changes constantly and `package.json` rarely does, this way editing the source does not re-run `npm install`. I tested it by building a second time with nothing changed:
 
-```
+```text
 $ docker build -t nodejs-hello .   # second build, everything cached
 Sending build context to Docker daemon   5.12kB
 Step 1/7 : FROM node:20-alpine
@@ -163,13 +164,15 @@ Successfully tagged nodejs-hello:latest
 
 Every step after the first says `Using cache`, and the whole build returns instantly instead of re-running `npm install`. (`Using cache` is the legacy builder's wording; BuildKit prints `CACHED`.)
 
+![Layer cache on the second build](../screenshots/05-docker-hello-world/build-cache.png)
+
 ---
 
 ## 2. Python app
 
 Flask, on port 5000.
 
-```
+```text
 $ cd ~/05-docker-hello-world/python-app && docker build -t python-hello .
 
 
@@ -232,7 +235,7 @@ Successfully built 79a7e8482d61
 Successfully tagged python-hello:latest
 ```
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/python-app$ docker run -d -p 5000:5000 --name python-hello python-hello
 26e6263548e23d811755e64fbdebde6e598c80c58f8cf45d833f370ad312983d
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/python-app$ docker logs python-hello
@@ -261,7 +264,7 @@ A nice detail visible in the logs after loading the page: Flask logs the request
 
 Plain Java using the JDK's built-in `HttpServer`, so there is no Maven or Gradle to set up. The Dockerfile is two-stage: compile with the JDK, ship on the smaller JRE.
 
-```
+```text
 $ cd ~/05-docker-hello-world/java-app && docker build -t java-hello .
 
 
@@ -299,7 +302,7 @@ Successfully built b99ea14dda1c
 Successfully tagged java-hello:latest
 ```
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/java-app$ docker run -d -p 8084:8080 --name java-hello java-hello
 e2110306a782dec4273afb8295acb7e3a5ac0e59669a5278e422498ebe77896d
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/java-app$ docker logs java-hello
@@ -314,7 +317,7 @@ Note the port mapping is `8084:8080` — the app listens on 8080 inside the cont
 
 You can see the two stages in the build output: `Step 1/9 : FROM eclipse-temurin:21-jdk-alpine AS build` compiles, then `Step 5/9 : FROM eclipse-temurin:21-jre-alpine` starts a fresh image and only the `.class` file is copied across. The saving is real:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker images | grep temurin
 eclipse-temurin   21-jdk-alpine   364MB
 eclipse-temurin   21-jre-alpine   208MB
@@ -328,7 +331,7 @@ eclipse-temurin   21-jre-alpine   208MB
 
 Just a static page on the official `httpd` image.
 
-```
+```text
 $ cd ~/05-docker-hello-world/Apache-app && docker build -t apache-hello .
 
 
@@ -346,7 +349,7 @@ Successfully built f277afc9cfd0
 Successfully tagged apache-hello:latest
 ```
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/Apache-app$ docker run -d -p 8081:80 --name apache-hello apache-hello
 9bb32088b0d7d2fac21fd611d32fb11f36118f4967246bf2b6db306b9760bd04
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/Apache-app$ curl -s localhost:8081 | grep -o '<h1>.*</h1>'
@@ -365,7 +368,7 @@ No `CMD` needed because the base image already has one — you can see it as `ht
 
 A real Vite + React app, built to static files and then served by nginx. This is a multi-stage build: stage one has Node and all the build tooling, stage two is just nginx with the compiled bundle copied in.
 
-```
+```text
 $ cd ~/05-docker-hello-world/React-app && docker build -t react-hello .
 
 
@@ -433,7 +436,7 @@ Successfully built 81b202cedc46
 Successfully tagged react-hello:latest
 ```
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/React-app$ docker run -d -p 8082:80 --name react-hello react-hello
 208938315e9cab0f8c867a57cda0af2e3e4c8cacef33ac67c68d5bf585d6b0a4
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/React-app$ curl -s localhost:8082
@@ -459,7 +462,7 @@ The `Hello World` heading in that screenshot exists only after the 142 kB JS bun
 
 The size difference from the multi-stage build is the interesting part:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker images | grep -E 'react-hello|node|nginx'
 react-hello   latest          48.4MB
 node          20-alpine       136MB
@@ -470,7 +473,7 @@ nginx         1.27-alpine     48.2MB
 
 **`.dockerignore` matters here.** The Dockerfile does `COPY . .`, so without it the local `node_modules` would be copied into the build context. With it, the build context is 8.7 kB:
 
-```
+```text
 Sending build context to Docker daemon  8.704kB
 ```
 
@@ -480,7 +483,7 @@ Sending build context to Docker daemon  8.704kB
 
 Same idea as Apache, different server.
 
-```
+```text
 $ cd ~/05-docker-hello-world/nginx-app && docker build -t nginx-hello .
 
 
@@ -498,7 +501,7 @@ Successfully built 35a4557194af
 Successfully tagged nginx-hello:latest
 ```
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/nginx-app$ docker run -d -p 8083:80 --name nginx-hello nginx-hello
 d3a5114f1c3c0b9a7973be8e32ef5a88e24467ccef4fb8e97ddac65b3054b2b4
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world/nginx-app$ curl -s localhost:8083 | grep -o '<h1>.*</h1>'
@@ -513,7 +516,7 @@ Document root here is `/usr/share/nginx/html`, not Apache's `/usr/local/apache2/
 
 ## All six running together
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker ps
 CONTAINER ID   IMAGE          COMMAND                  CREATED              STATUS              PORTS                                         NAMES
 d3a5114f1c3c   nginx-hello    "/docker-entrypoint.…"   About a minute ago   Up About a minute   0.0.0.0:8083->80/tcp, [::]:8083->80/tcp       nginx-hello
@@ -528,7 +531,7 @@ The `COMMAND` column is worth reading: `httpd-foreground` and `/docker-entrypoin
 
 Checking all six respond, in one loop:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ for p in 3000 5000 8081 8082 8083 8084; do
 >   printf "port %-5s -> HTTP %s\n" "$p" "$(curl -s -o /dev/null -w '%{http_code}' localhost:$p)"
 > done
@@ -544,7 +547,7 @@ port 8084  -> HTTP 200
 
 ## Image sizes
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker images | grep -E 'REPOSITORY|hello'
 REPOSITORY        TAG             IMAGE ID       CREATED         SIZE
 nginx-hello       latest          35a4557194af   5 minutes ago   48.2MB
@@ -570,7 +573,7 @@ The two static-file servers are the smallest by a wide margin. **The React app i
 
 ## Cleanup
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/05-docker-hello-world$ docker rm -f nodejs-hello python-hello java-hello apache-hello react-hello nginx-hello
 nodejs-hello
 python-hello

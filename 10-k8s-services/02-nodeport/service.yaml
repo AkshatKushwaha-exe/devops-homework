@@ -1,0 +1,22 @@
+# NodePort builds on ClusterIP: it still has a cluster IP, and additionally opens
+# port 30080 on *every* node. Traffic to <any-node-ip>:30080 reaches a backend Pod,
+# even one running on a different node.
+#
+# The valid range is 30000-32767 unless the API server is started with a different
+# --service-node-port-range. Leaving nodePort out lets Kubernetes pick one.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service-nodeport
+  labels:
+    app: web-nodeport
+spec:
+  type: NodePort
+  selector:
+    app: web-nodeport
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+      protocol: TCP

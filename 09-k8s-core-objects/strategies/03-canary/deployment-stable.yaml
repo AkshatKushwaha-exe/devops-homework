@@ -1,0 +1,44 @@
+# Stable track: 9 of the 10 Pods behind the Service. The Service selects on
+# `app: myapp-canary` only, so stable and canary Pods are both endpoints and the
+# traffic split is just the pod-count ratio — 9:1 is roughly 90/10.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-stable
+  labels:
+    app: myapp-canary
+    track: stable
+spec:
+  replicas: 9
+  selector:
+    matchLabels:
+      app: myapp-canary
+      track: stable
+  template:
+    metadata:
+      labels:
+        app: myapp-canary
+        track: stable
+        version: v1
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat > /usr/share/nginx/html/index.html <<'HTML'
+              <html><body style="background:#14213d;color:#e5e5e5;font-family:monospace;font-size:3em;text-align:center;padding-top:20vh">
+              <p>STABLE v1</p>
+              </body></html>
+              HTML
+              exec nginx -g 'daemon off;'
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          resources:
+            requests: { cpu: "10m", memory: "24Mi" }
+            limits:   { cpu: "50m", memory: "48Mi" }

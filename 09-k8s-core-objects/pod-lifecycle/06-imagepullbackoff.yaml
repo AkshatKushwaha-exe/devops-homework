@@ -1,0 +1,10 @@
+# ImagePullBackOff. The tag does not exist, so the kubelet cannot pull the image.
+# The Pod stays Pending; the container state is Waiting with reason ImagePullBackOff.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-image-error
+spec:
+  containers:
+    - name: missing
+      image: nginx:this-tag-does-not-exist

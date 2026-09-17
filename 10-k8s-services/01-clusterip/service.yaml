@@ -1,0 +1,21 @@
+# ClusterIP is the default type. It gets a virtual IP that only exists inside the
+# cluster, and a DNS name: web-service-clusterip.default.svc.cluster.local
+#
+# port 8080       -> the port the Service answers on
+# targetPort 80   -> the port the container listens on
+# They are deliberately different here so the two are impossible to confuse.
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-service-clusterip
+  labels:
+    app: web-clusterip
+spec:
+  type: ClusterIP
+  selector:
+    app: web-clusterip
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 80
+      protocol: TCP

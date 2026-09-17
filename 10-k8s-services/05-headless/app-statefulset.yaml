@@ -1,0 +1,38 @@
+# A StatefulSet governed by the headless Service above. Pods are db-0, db-1, db-2
+# — created in order, each keeping its name across restarts and rescheduling.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+spec:
+  serviceName: db-headless
+  replicas: 3
+  selector:
+    matchLabels:
+      app: db-headless
+  template:
+    metadata:
+      labels:
+        app: db-headless
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              echo "headless demo - I am ${POD_NAME} at ${POD_IP}" \
+                > /usr/share/nginx/html/index.html
+              exec nginx -g 'daemon off;'
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef: { fieldPath: metadata.name }
+            - name: POD_IP
+              valueFrom:
+                fieldRef: { fieldPath: status.podIP }
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: "20m", memory: "32Mi" }
+            limits:   { cpu: "100m", memory: "64Mi" }

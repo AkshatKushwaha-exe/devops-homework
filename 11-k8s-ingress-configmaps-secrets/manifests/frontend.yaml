@@ -1,0 +1,72 @@
+# Frontend: nginx serving a page built from ConfigMap values at container start.
+# Same ConfigMap as the backend, mounted a different way — as a file this time,
+# so both injection styles appear in one assignment.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-frontend
+  namespace: default
+  labels:
+    app: demo-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-frontend
+  template:
+    metadata:
+      labels:
+        app: demo-frontend
+    spec:
+      volumes:
+        - name: config-volume
+          configMap:
+            name: app-config          # every key becomes a file in the mount
+      containers:
+        - name: frontend
+          image: nginx:1.25-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat > /usr/share/nginx/html/index.html <<HTML
+              <html><body style="font-family:monospace;background:#0b132b;color:#6fffe9;text-align:center;padding-top:15vh">
+              <h1>Demo Frontend</h1>
+              <p>ENVIRONMENT: ${ENVIRONMENT}</p>
+              <p>DEFAULT_CURRENCY: ${DEFAULT_CURRENCY}</p>
+              <p style="font-size:0.8em;color:#5bc0be">served by ${HOSTNAME}</p>
+              <p style="font-size:0.7em;color:#3a506b">/api/ is the same Ingress, routed to the backend</p>
+              </body></html>
+              HTML
+              exec nginx -g 'daemon off;'
+          envFrom:
+            - configMapRef:
+                name: app-config
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/app-config      # the same ConfigMap, as files
+              readOnly: true
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests: { cpu: "20m", memory: "32Mi" }
+            limits:   { cpu: "100m", memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-frontend-service
+  namespace: default
+  labels:
+    app: demo-frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: demo-frontend
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

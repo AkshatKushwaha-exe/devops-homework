@@ -1,0 +1,32 @@
+# Init container. Runs to completion before the main container is started at all.
+# Pod status goes Init:0/1 -> PodInitializing -> Running.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-init
+spec:
+  volumes:
+    - name: shared
+      emptyDir: {}
+  initContainers:
+    - name: setup
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "init: preparing the page"
+          sleep 10
+          echo "<h1>Written by the init container</h1>" > /work/index.html
+          echo "init: done"
+      volumeMounts:
+        - name: shared
+          mountPath: /work
+  containers:
+    - name: web
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: shared
+          mountPath: /usr/share/nginx/html

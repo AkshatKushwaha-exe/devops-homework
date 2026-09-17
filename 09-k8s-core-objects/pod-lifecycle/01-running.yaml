@@ -1,0 +1,14 @@
+# Phase: Running. The normal case — container started and stayed up.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-running
+spec:
+  containers:
+    - name: nginx
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      resources:
+        requests: { cpu: "20m", memory: "32Mi" }
+        limits:   { cpu: "100m", memory: "64Mi" }

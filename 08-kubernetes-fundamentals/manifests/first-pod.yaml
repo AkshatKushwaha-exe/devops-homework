@@ -1,0 +1,22 @@
+# The same Pod that `kubectl run hello-nginx --image=nginx:1.25-alpine` creates,
+# written out in full. Applying this file and running that command produce the
+# same object — the declarative form is what you keep in git.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-nginx
+  labels:
+    run: hello-nginx
+spec:
+  containers:
+    - name: hello-nginx
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      resources:
+        requests:
+          cpu: "50m"
+          memory: "32Mi"
+        limits:
+          cpu: "200m"
+          memory: "64Mi"

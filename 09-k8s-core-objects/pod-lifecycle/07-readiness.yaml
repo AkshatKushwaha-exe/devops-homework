@@ -1,0 +1,22 @@
+# Readiness probe. The container is Running from the start, but the Pod is not
+# Ready (0/1) until the probe passes. Readiness answers "should this Pod get
+# traffic?" — a failing readiness probe removes the Pod from Service endpoints
+# without restarting it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-readiness
+  labels:
+    app: lifecycle-readiness
+spec:
+  containers:
+    - name: slow-starter
+      image: nginx:1.25-alpine
+      ports:
+        - containerPort: 80
+      readinessProbe:
+        httpGet:
+          path: /
+          port: 80
+        initialDelaySeconds: 15
+        periodSeconds: 5

@@ -1,0 +1,43 @@
+# The v2 side. Applying this kills all three v1 Pods first and only then starts
+# the v2 Pods — a curl loop against the Service shows the gap.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-recreate
+  labels:
+    app: app-recreate
+spec:
+  replicas: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: app-recreate
+  template:
+    metadata:
+      labels:
+        app: app-recreate
+        version: v2
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.27-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat > /usr/share/nginx/html/index.html <<'HTML'
+              <html><body style="background:#0f4c81;color:#ffffff;font-family:monospace;font-size:3em;text-align:center;padding-top:20vh">
+              <p>STRATEGY: RECREATE</p>
+              <p style="font-size:0.6em;color:#3282b8">VERSION: v2 (UPGRADED)</p>
+              </body></html>
+              HTML
+              exec nginx -g 'daemon off;'
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          resources:
+            requests: { cpu: "20m", memory: "32Mi" }
+            limits:   { cpu: "100m", memory: "64Mi" }

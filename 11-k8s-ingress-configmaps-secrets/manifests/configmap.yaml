@@ -1,0 +1,15 @@
+# Plain-text configuration. Nothing in here is sensitive — that is the whole
+# distinction between a ConfigMap and a Secret.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+  labels:
+    app: demo-app
+data:
+  ENVIRONMENT: "production"
+  LOG_LEVEL: "INFO"
+  APP_PORT: "5000"
+  DEFAULT_CURRENCY: "INR"
+  MAX_BOOKING_DAYS: "30"

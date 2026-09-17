@@ -1,0 +1,27 @@
+# Liveness probe. The health file is deleted after 20 seconds; the probe then
+# fails three times in a row and the kubelet restarts the container.
+# Watch the RESTARTS column climb.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-liveness
+spec:
+  containers:
+    - name: self-breaking
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          touch /tmp/healthy
+          echo "healthy for 20 seconds"
+          sleep 20
+          rm -f /tmp/healthy
+          echo "health file removed - liveness will now fail"
+          sleep 600
+      livenessProbe:
+        exec:
+          command: ["cat", "/tmp/healthy"]
+        initialDelaySeconds: 5
+        periodSeconds: 5
+        failureThreshold: 3

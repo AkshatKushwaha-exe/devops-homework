@@ -1,0 +1,44 @@
+# Canary track: 1 Pod out of 10. Same Service, same `app` label, different
+# `track` label and image content. Shifting traffic means changing replica
+# counts — there is no weight field in a core Service.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-canary
+  labels:
+    app: myapp-canary
+    track: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapp-canary
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: myapp-canary
+        track: canary
+        version: v2
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              cat > /usr/share/nginx/html/index.html <<'HTML'
+              <html><body style="background:#fca311;color:#14213d;font-family:monospace;font-size:3em;text-align:center;padding-top:20vh">
+              <p>CANARY v2</p>
+              </body></html>
+              HTML
+              exec nginx -g 'daemon off;'
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 2
+            periodSeconds: 3
+          resources:
+            requests: { cpu: "10m", memory: "24Mi" }
+            limits:   { cpu: "50m", memory: "48Mi" }

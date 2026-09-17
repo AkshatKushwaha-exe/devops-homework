@@ -1,0 +1,14 @@
+# Phase: Pending. Asks for more CPU and memory than any node in the cluster has,
+# so the scheduler can never place it. The Pod object exists; no container ever runs.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-pending
+spec:
+  containers:
+    - name: greedy
+      image: nginx:1.25-alpine
+      resources:
+        requests:
+          cpu: "64"
+          memory: "256Gi"

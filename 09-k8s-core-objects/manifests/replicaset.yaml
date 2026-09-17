@@ -1,0 +1,27 @@
+# A ReplicaSet keeps exactly `replicas` Pods matching its selector alive.
+# Delete one of its Pods and it makes another. It has no update strategy,
+# which is the reason Deployments exist on top of it.
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: backend-rs
+  labels:
+    app: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: "20m", memory: "32Mi" }
+            limits:   { cpu: "100m", memory: "64Mi" }

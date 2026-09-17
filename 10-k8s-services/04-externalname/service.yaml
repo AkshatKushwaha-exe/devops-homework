@@ -1,0 +1,14 @@
+# ExternalName is the odd one out: no selector, no endpoints, no proxying, no
+# cluster IP. CoreDNS simply returns a CNAME pointing at externalName.
+#
+# The point is indirection: application code talks to `external-api` forever, and
+# swapping the real host is a one-line change here instead of a redeploy.
+apiVersion: v1
+kind: Service
+metadata:
+  name: external-api
+  labels:
+    app: external-api
+spec:
+  type: ExternalName
+  externalName: example.com

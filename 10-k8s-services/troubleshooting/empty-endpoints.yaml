@@ -1,0 +1,42 @@
+# The single most common Service failure: the selector does not match the Pod
+# labels, so the Service has a ClusterIP but no endpoints behind it.
+#
+# Pods are labelled  app: broken-web
+# Service looks for  app: broken-app
+#
+# Diagnosis: `kubectl get endpoints broken-service` shows <none>.
+# The Service is fine, DNS resolves, and every connection still fails.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: broken-web
+  template:
+    metadata:
+      labels:
+        app: broken-web
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: "20m", memory: "32Mi" }
+            limits:   { cpu: "100m", memory: "64Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: broken-service
+spec:
+  type: ClusterIP
+  selector:
+    app: broken-app        # does not match any Pod
+  ports:
+    - port: 80
+      targetPort: 80

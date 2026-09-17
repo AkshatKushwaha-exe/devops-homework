@@ -1,0 +1,21 @@
+# Deliberately broken: the image tag does not exist.
+# Symptom: Pods stuck at 0/1 ErrImagePull -> ImagePullBackOff.
+# Where to look: `kubectl describe pod` Events, not `kubectl logs` — there is no
+# container yet, so there are no logs to read.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: broken-image
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: broken-image
+  template:
+    metadata:
+      labels:
+        app: broken-image
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpin3      # typo: "alpin3"

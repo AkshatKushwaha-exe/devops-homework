@@ -1,0 +1,35 @@
+# Deliberately broken: the Service selector does not match the Pod labels
+# (`app: mismatch-web` vs `app: mismatch-app`).
+# Symptom: the Service exists and has a ClusterIP, but its Endpoints list is empty
+# and every request times out or is refused.
+# Where to look: `kubectl get endpoints <svc>` — an empty list is the tell.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mismatch-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: mismatch-app
+  template:
+    metadata:
+      labels:
+        app: mismatch-app          # the Pods carry this label
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.25-alpine
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mismatch-service
+spec:
+  selector:
+    app: mismatch-web              # ... but the Service looks for this one
+  ports:
+    - port: 80
+      targetPort: 80

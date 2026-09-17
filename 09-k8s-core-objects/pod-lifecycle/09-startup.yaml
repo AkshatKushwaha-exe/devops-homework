@@ -1,0 +1,30 @@
+# Startup probe. The app takes 30 seconds to become usable. Without a startup
+# probe the liveness probe would kill it before it ever finished booting.
+# Liveness is held off until the startup probe succeeds.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-startup
+spec:
+  containers:
+    - name: slow-boot
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          echo "booting - this takes 30 seconds"
+          sleep 30
+          touch /tmp/started
+          echo "started"
+          sleep 600
+      startupProbe:
+        exec:
+          command: ["cat", "/tmp/started"]
+        periodSeconds: 5
+        failureThreshold: 12      # 12 x 5s = 60s of grace to finish booting
+      livenessProbe:
+        exec:
+          command: ["cat", "/tmp/started"]
+        periodSeconds: 5
+        failureThreshold: 3

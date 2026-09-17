@@ -1,0 +1,19 @@
+# Graceful termination. On delete the kubelet sends SIGTERM, the process traps it,
+# cleans up for 10 seconds, and exits 0 — all inside the 30s grace period.
+# If it had not exited in time, SIGKILL would have followed.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lifecycle-termination
+spec:
+  terminationGracePeriodSeconds: 30
+  containers:
+    - name: graceful-app
+      image: busybox:1.36
+      command:
+        - sh
+        - -c
+        - |
+          trap 'echo "SIGTERM received - flushing state"; sleep 10; echo "cleanup complete"; exit 0' TERM
+          echo "application running"
+          while true; do sleep 1; done

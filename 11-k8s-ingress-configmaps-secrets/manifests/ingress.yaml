@@ -1,0 +1,34 @@
+# One entry point, two backends, routed by path. Both Services stay ClusterIP —
+# nothing is exposed except the Ingress controller itself.
+#
+# rewrite-target /$2 strips the /api prefix: a request for /api/status arrives at
+# the backend as /status. The capture groups in the path make that work.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: demo-ingress
+  namespace: default
+  labels:
+    app: demo-app
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: demo.local
+      http:
+        paths:
+          - path: /api(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: demo-backend-service
+                port: { number: 80 }
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-frontend-service
+                port: { number: 80 }

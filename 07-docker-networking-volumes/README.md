@@ -1,9 +1,10 @@
 # Docker Networking & Volume Homework
 
-**Akshat Kushwaha**
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 3 September 2026
 
-```
+```text
 akshat@AK-work:~$ docker --version
 Docker version 28.2.2, build 28.2.2-0ubuntu1~22.04.1
 ```
@@ -28,7 +29,7 @@ The shape is deliberate: **backend is the only container on two networks**, so i
 
 ### Creating the networks and starting the containers
 
-```
+```text
 akshat@AK-work:~$ docker network create frontend-net
 2c16fa3a57333e35f9ae517d28ff475c2aba3e14559086ec7fd35c258375a542
 
@@ -94,7 +95,7 @@ Three things worth reading out of that:
 
 `docker exec backend ip -br a` failed, which is a small real-world lesson: `alpine:3.20` ships busybox `ip`, and busybox does not implement the `-br` (brief) flag. `ip -o addr show` works instead:
 
-```
+```text
 akshat@AK-work:~$ docker exec backend ip -o addr show | grep -v " lo "
 2: eth0    inet 172.18.0.3/16 brd 172.18.255.255 scope global eth0\       valid_lft forever preferred_lft forever
 3: eth1    inet 172.19.0.3/16 brd 172.19.255.255 scope global eth1\       valid_lft forever preferred_lft forever
@@ -106,7 +107,7 @@ Two interfaces, `eth0` and `eth1`, one per network. Docker gave the container a 
 
 `alpine` has no `ping` by default, so that goes in first.
 
-```
+```text
 akshat@AK-work:~$ docker exec backend ip -o addr show | grep -v " lo "
 2: eth0    inet 172.18.0.3/16 brd 172.18.255.255 scope global eth0\       valid_lft forever preferred_lft forever
 3: eth1    inet 172.19.0.3/16 brd 172.19.255.255 scope global eth1\       valid_lft forever preferred_lft forever
@@ -171,7 +172,7 @@ Address: 172.19.0.2
 
 And the isolation half:
 
-```
+```text
 # frontend -> database by NAME
 akshat@AK-work:~$ docker exec frontend ping -c 2 -W 2 database
 ping: bad address 'database'
@@ -238,7 +239,7 @@ isolated-net:
 
 Pinging proves reachability; connecting to the database proves it is actually usable.
 
-```
+```text
 # Alpine's mysql-client is actually MariaDB, which cannot do MySQL 8 default auth:
 akshat@AK-work:~$ docker exec backend mysql -h database -uroot -prootpass -e "SHOW DATABASES;"
 ERROR 1045 (28000): Plugin caching_sha2_password could not be loaded: Error loading shared library /usr/lib/mariadb/plugin/caching_sha2_password.so: No such file or directory
@@ -300,7 +301,7 @@ Done at the end, after Tasks 2 and 3.
 
 ## Task 2: Host network
 
-```
+```text
 akshat@AK-work:~$ docker pull httpd:2.4
 2.4: Pulling from library/httpd
 Digest: sha256:979c38c2228d28c2edfd45c6e27dcee1c7b4a101a5526721ae8ece454e89e99e
@@ -354,7 +355,7 @@ NetworkMode=host  Networks=host   IP=[]
 
 **`docker exec apache-host hostname -i` returns `127.0.1.1`**, which is the *host's* own entry in `/etc/hosts`, not a container IP. And `docker inspect` confirms it:
 
-```
+```text
 NetworkMode=host  Networks=host   IP=[]
 ```
 
@@ -372,7 +373,7 @@ An empty IP field. The container has no address of its own because it is not on 
 
 ### Setting up the folder and mounting it
 
-```
+```text
 akshat@AK-work:~/bind-mount-demo$ pwd
 /home/akshat/bind-mount-demo
 
@@ -425,7 +426,7 @@ Serving my `index.html`, not nginx's default page:
 
 This is the part the task is really about.
 
-```
+```text
 # modify the file on the HOST - no container restart, no rebuild
 akshat@AK-work:~/bind-mount-demo$ sed -i 's|<h1>Hello students</h1>|<h1>Hello students - updated live</h1>|' index.html
 
@@ -464,7 +465,7 @@ Two further things I tried:
 
 **Writing from inside the container lands on the host — owned by root.**
 
-```
+```text
 -rw-rw-r-- 1 akshat akshat  21 Sep  3 16:13 about.html
 -rw-rw-rw- 1 root   root    29 Sep  3 16:13 from-container.html
 -rw-rw-r-- 1 akshat akshat 219 Sep  3 16:13 index.html
@@ -476,7 +477,7 @@ Two further things I tried:
 
 Appending `:ro` fixes exactly that problem.
 
-```
+```text
 akshat@AK-work:~/bind-mount-demo$ docker rm -f nginx-bind
 nginx-bind
 
@@ -587,7 +588,7 @@ In practice most multi-host container networking has moved to Kubernetes with a 
 
 ## Cleanup
 
-```
+```text
 akshat@AK-work:~$ docker rm -f frontend backend database apache-host nginx-bind-ro
 frontend
 backend
@@ -616,15 +617,35 @@ akshat@AK-work:~$ rm -rf ~/bind-mount-demo
 
 ## Screenshots
 
-| | |
-|---|---|
-| Task 1 — networks and containers | ![setup](../screenshots/07-networking-volumes/task1-networks-setup.png) |
-| Task 1 — connectivity and isolation | ![connectivity](../screenshots/07-networking-volumes/task1-connectivity.png) |
-| Task 1 — MySQL across networks | ![mysql](../screenshots/07-networking-volumes/task1-mysql.png) |
-| Task 2 — host network, empty PORTS column | ![host](../screenshots/07-networking-volumes/task2-host-network.png) |
-| Task 2 — Apache in the browser on port 80 | ![apache](../screenshots/07-networking-volumes/apache-host-port80.png) |
-| Task 3 — bind mount, live edit, read-only | ![bind](../screenshots/07-networking-volumes/task3-bind-mount.png) |
-| Task 3 — the page before and after the edit | ![before](../screenshots/07-networking-volumes/bind-mount-before.png) ![after](../screenshots/07-networking-volumes/bind-mount-after.png) |
+**Task 1 — networks and containers**
+
+![setup](../screenshots/07-networking-volumes/task1-networks-setup.png)
+
+**Task 1 — connectivity and isolation**
+
+![connectivity](../screenshots/07-networking-volumes/task1-connectivity.png)
+
+**Task 1 — MySQL across networks**
+
+![mysql](../screenshots/07-networking-volumes/task1-mysql.png)
+
+**Task 2 — host network, empty PORTS column**
+
+![host](../screenshots/07-networking-volumes/task2-host-network.png)
+
+**Task 2 — Apache in the browser on port 80**
+
+![apache](../screenshots/07-networking-volumes/apache-host-port80.png)
+
+**Task 3 — bind mount, live edit, read-only**
+
+![bind](../screenshots/07-networking-volumes/task3-bind-mount.png)
+
+**Task 3 — the page before and after the edit**
+
+![before](../screenshots/07-networking-volumes/bind-mount-before.png)
+
+![after](../screenshots/07-networking-volumes/bind-mount-after.png)
 
 ---
 

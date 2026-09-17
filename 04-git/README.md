@@ -1,9 +1,10 @@
 # Git Homework
 
-**Akshat Kushwaha**
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 3 September 2026
 
-```
+```text
 akshat@AK-work:~$ git --version
 git version 2.34.1
 ```
@@ -16,7 +17,7 @@ Everything below is a real session in a throwaway repo at `~/git-homework`. The 
 
 ### Setting up a repo to test in
 
-```
+```text
 akshat@AK-work:~$ mkdir git-homework && cd git-homework
 akshat@AK-work:~/git-homework$ git init
 hint: Using 'master' as the name for the initial branch. This default branch name
@@ -54,7 +55,7 @@ Four tests, one per case that behaves differently.
 
 ### Test 1: modifying a file that is already tracked
 
-```
+```text
 akshat@AK-work:~/git-homework$ echo "This repo is for the git homework tasks." >> README.md
 akshat@AK-work:~/git-homework$ git status
 On branch master
@@ -68,7 +69,7 @@ no changes added to commit (use "git add" and/or "git commit -a")
 
 `README.md` is modified but not staged. Plain `git commit -m` refuses:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git commit -m "Describe the repo"
 On branch master
 Changes not staged for commit:
@@ -83,7 +84,7 @@ No commit was created — it printed the status back at me and stopped. Note git
 
 With `-a`:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git commit -a -m "Describe the repo"
 [master a9e2e2d] Describe the repo
  1 file changed, 1 insertion(+)
@@ -93,7 +94,7 @@ Committed as `a9e2e2d`, no `git add` needed. **This is the case `-a` exists for.
 
 ### Test 2: a brand new file
 
-```
+```text
 akshat@AK-work:~/git-homework$ echo "<h1>Hello</h1>" > index.html
 akshat@AK-work:~/git-homework$ git status
 On branch master
@@ -106,7 +107,7 @@ nothing added to commit but untracked files present (use "git add" to track)
 
 Now `-a`:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git commit -a -m "Add index.html"
 On branch master
 Untracked files:
@@ -120,7 +121,7 @@ nothing added to commit but untracked files present (use "git add" to track)
 
 You still need `git add`:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git add index.html
 akshat@AK-work:~/git-homework$ git commit -m "Add index.html"
 [master 8c884ab] Add index.html
@@ -132,7 +133,7 @@ akshat@AK-work:~/git-homework$ git commit -m "Add index.html"
 
 This is where it gets genuinely easy to make a mistake. One modified tracked file and one new untracked file, committed with `-a`:
 
-```
+```text
 akshat@AK-work:~/git-homework$ echo "body { font-family: sans-serif; }" > style.css
 akshat@AK-work:~/git-homework$ echo "<link rel=stylesheet href=style.css>" >> index.html
 akshat@AK-work:~/git-homework$ git status --short
@@ -145,7 +146,7 @@ akshat@AK-work:~/git-homework$ git commit -a -m "Add styling"
 
 **"1 file changed"** — it committed the `index.html` edit and silently left `style.css` behind. The commit message says "Add styling" and the stylesheet is not in it. If you did not read that line carefully you would push a broken page.
 
-```
+```text
 akshat@AK-work:~/git-homework$ git status
 On branch master
 Untracked files:
@@ -166,7 +167,7 @@ The `M` / `??` columns in `git status --short` are the tell: `M` is tracked-and-
 
 `-a` covers deletions too, which surprised me — "all" really does mean all tracked changes, not just edits.
 
-```
+```text
 akshat@AK-work:~/git-homework$ echo "temp" > scratch.txt
 akshat@AK-work:~/git-homework$ git add scratch.txt
 akshat@AK-work:~/git-homework$ git commit -m "Add scratch file"
@@ -206,7 +207,7 @@ My takeaway: `-a` is fine for a quick fix to files that already exist, but `git 
 
 Carrying on in the same repo, renamed to `main` first:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git branch -m main
 akshat@AK-work:~/git-homework$ git log --oneline
 7181e8f Remove scratch file
@@ -222,7 +223,7 @@ Seven commits on main, which covers the "2–4 commits" the task asked for.
 
 ### Step 3: create a new branch
 
-```
+```text
 akshat@AK-work:~/git-homework$ git checkout -b feature/notes
 Switched to a new branch 'feature/notes'
 ```
@@ -231,7 +232,7 @@ Switched to a new branch 'feature/notes'
 
 ### Step 4: three commits on the branch
 
-```
+```text
 akshat@AK-work:~/git-homework$ echo "# Notes" > notes.md
 akshat@AK-work:~/git-homework$ git add notes.md
 akshat@AK-work:~/git-homework$ git commit -m "Add notes.md"
@@ -252,7 +253,7 @@ The middle one is deliberately the interesting case: the footer is a finished, s
 
 ### Step 5: find the commit to pick
 
-```
+```text
 akshat@AK-work:~/git-homework$ git log --oneline
 5152e5d Add experimental dark mode toggle
 afd9e1f Add footer with copyright
@@ -268,7 +269,7 @@ a9e2e2d Describe the repo
 
 `afd9e1f` is the one. Checking it really is the change I want before picking it:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git show afd9e1f
 commit afd9e1f7d83f0c8183aad98bc6f616970541d668
 Author: Akshat Kushwaha <akshat.kushwaha@scaler.com>
@@ -290,7 +291,7 @@ One line added to one file. `git show` before `git cherry-pick` is worth the two
 
 ### Step 6: cherry-pick it onto main
 
-```
+```text
 akshat@AK-work:~/git-homework$ git checkout main
 Switched to branch 'main'
 akshat@AK-work:~/git-homework$ cat index.html
@@ -302,7 +303,7 @@ index.html  README.md  style.css
 
 No footer, and no `notes.md` — main is as it was. Now the pick:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git cherry-pick afd9e1f
 [main bdeb1ce] Add footer with copyright
  Date: Thu Sep 3 15:58:49 2026 +0530
@@ -311,7 +312,7 @@ akshat@AK-work:~/git-homework$ git cherry-pick afd9e1f
 
 ### Step 7: verify
 
-```
+```text
 akshat@AK-work:~/git-homework$ cat index.html
 <h1>Hello</h1>
 <link rel=stylesheet href=style.css>
@@ -340,7 +341,7 @@ That second half is the whole point. One commit came across; the two either side
 
 On the branch that commit is `afd9e1f`. On main it is `bdeb1ce`. Same author, same message, same diff — different hash.
 
-```
+```text
 akshat@AK-work:~/git-homework$ git show -s --format='author:    %aI%ncommitter: %cI%ntree:      %T%nparent:    %P' afd9e1f
 author:    2026-09-03T15:58:49+05:30
 committer: 2026-09-03T15:58:49+05:30
@@ -365,7 +366,7 @@ The author date is preserved (`15:58:49` on both), which is why the cherry-pick 
 
 The diff really is identical, blob hashes and all:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git diff bdeb1ce^ bdeb1ce -- index.html
 diff --git a/index.html b/index.html
 index 9bdfbc9..569c305 100644
@@ -381,7 +382,7 @@ index 9bdfbc9..569c305 100644
 
 Both copies now exist, one on each branch:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git log --oneline --graph --all
 * 5152e5d Add experimental dark mode toggle
 * afd9e1f Add footer with copyright
@@ -399,7 +400,7 @@ akshat@AK-work:~/git-homework$ git log --oneline --graph --all
 
 You can see the fork at `7181e8f` and "Add footer with copyright" appearing twice, once on each side.
 
-```
+```text
 akshat@AK-work:~/git-homework$ git branch -vv
   feature/notes 5152e5d Add experimental dark mode toggle
 * main          bdeb1ce Add footer with copyright
@@ -411,7 +412,7 @@ That duplicate is the trade-off. When `feature/notes` eventually gets merged, gi
 
 **`-n` (`--no-commit`)** applies the change and stages it, but stops short of committing, so you can edit first:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git cherry-pick -n d94226d
 akshat@AK-work:~/git-homework$ git status
 On branch main
@@ -422,7 +423,7 @@ Changes to be committed:
 
 I assumed `git cherry-pick --abort` would undo that. It does not:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git cherry-pick --abort
 error: no cherry-pick or revert in progress
 fatal: cherry-pick failed
@@ -430,7 +431,7 @@ fatal: cherry-pick failed
 
 That is worth knowing. `--abort` only works while a cherry-pick is genuinely *in progress* — i.e. it hit a conflict and left the sequencer state in `.git/`. A clean `-n` pick finishes immediately and leaves nothing to abort; the change is just sitting in your index like any other staged edit. The undo is the ordinary one:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git reset --hard HEAD
 HEAD is now at bdeb1ce Add footer with copyright
 akshat@AK-work:~/git-homework$ git status --short
@@ -440,7 +441,7 @@ index.html  README.md  style.css
 
 **`-x`** is the one I will actually use in future. It appends a provenance line to the message:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git checkout -b demo/x-flag 7181e8f
 Switched to a new branch 'demo/x-flag'
 akshat@AK-work:~/git-homework$ git cherry-pick -x afd9e1f
@@ -459,7 +460,7 @@ Date:   Thu Sep 3 15:58:49 2026 +0530
 
 Six months later you can see where the commit came from. For anything shared, that trail is worth having. I did this on a throwaway branch and deleted it afterwards so it does not clutter the graph above:
 
-```
+```text
 akshat@AK-work:~/git-homework$ git checkout main
 Switched to branch 'main'
 akshat@AK-work:~/git-homework$ git branch -D demo/x-flag
@@ -473,11 +474,17 @@ nothing to commit, working tree clean
 
 ## Screenshots
 
-| | |
-|---|---|
-| Task 1 — all four `-a` tests | ![task 1](../screenshots/04-git/task1-commit-a.png) |
-| Task 2 — branch, cherry-pick, verify | ![task 2](../screenshots/04-git/task2-cherry-pick.png) |
-| The `-n` / `--abort` / `-x` options | ![options](../screenshots/04-git/cherry-pick-options.png) |
+**Task 1 — all four `-a` tests**
+
+![task 1](../screenshots/04-git/task1-commit-a.png)
+
+**Task 2 — branch, cherry-pick, verify**
+
+![task 2](../screenshots/04-git/task2-cherry-pick.png)
+
+**The `-n` / `--abort` / `-x` options**
+
+![options](../screenshots/04-git/cherry-pick-options.png)
 
 ---
 

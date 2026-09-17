@@ -1,11 +1,12 @@
 # Networking Homework
 
-**Akshat Kushwaha**
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 3 September 2026
 
 Every command below was run on my own machine and the output is what it printed.
 
-```
+```text
 akshat@AK-work:~$ lsb_release -d
 Description:	Ubuntu 22.04.5 LTS
 akshat@AK-work:~$ hostname
@@ -24,7 +25,7 @@ This laptop has **Cloudflare WARP** running, which is a WireGuard VPN. It shows 
 
 Lists every network interface and the addresses assigned to it. The modern replacement for `ifconfig`, which is not even installed by default on Ubuntu any more.
 
-```
+```text
 akshat@AK-work:~$ ip a
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
@@ -58,7 +59,7 @@ akshat@AK-work:~$ ip a
        valid_lft forever preferred_lft forever
 ```
 
-Reading that:
+**What I understood:**
 
 - **`lo`** is loopback, always `127.0.0.1`. Traffic to it never leaves the machine.
 - **`eno1`** is the wired port. `NO-CARRIER` and `state DOWN` — no cable plugged in. It has a MAC but no IP.
@@ -68,7 +69,7 @@ Reading that:
 
 The short version is easier to scan:
 
-```
+```text
 akshat@AK-work:~$ ip -br a
 lo               UNKNOWN        127.0.0.1/8 ::1/128 
 eno1             DOWN           
@@ -80,7 +81,7 @@ veth6657972@if2  UP             fe80::90b0:cff:fe46:b4f/64
 
 And just the addresses:
 
-```
+```text
 akshat@AK-work:~$ hostname -I
 172.20.0.64 172.17.0.1 172.16.0.2 2606:4700:110:aaaa:bbbb:cccc:dddd:eeee
 ```
@@ -93,7 +94,7 @@ Four addresses on one machine, which is normal once you have a VPN and Docker.
 
 The routing table. For any destination, the kernel picks the most specific matching route.
 
-```
+```text
 akshat@AK-work:~$ ip r
 default via 172.20.0.1 dev wlo1 proto dhcp metric 20600 
 169.254.0.0/16 dev docker0 scope link metric 1000 
@@ -104,13 +105,15 @@ akshat@AK-work:~$ ip route get 8.8.8.8
     cache
 ```
 
+**What I understood:**
+
 - **`default via 172.20.0.1 dev wlo1`** — anything with no more specific match goes to the router at 172.20.0.1. That is the gateway.
 - **`172.20.0.0/21 dev wlo1 ... scope link`** — my own LAN, reachable directly with no router in between.
 - **`172.17.0.0/16 dev docker0`** — Docker's container subnet.
 
 `ip route get` is the useful one, because it asks the kernel to actually decide:
 
-```
+```text
 akshat@AK-work:~$ ip route get 8.8.8.8
 8.8.8.8 dev CloudflareWARP table 65743 src 172.16.0.2 uid 1000 
     cache
@@ -120,7 +123,7 @@ akshat@AK-work:~$ ip route get 8.8.8.8
 
 That table is enormous, because WARP enumerates almost the whole IPv4 space in order to capture it without literally overriding the default route:
 
-```
+```text
 akshat@AK-work:~$ ip route show table 65743 | head -8
 0.0.0.0/5 dev CloudflareWARP proto static scope link 
 8.0.0.0/7 dev CloudflareWARP proto static scope link 
@@ -142,7 +145,7 @@ akshat@AK-work:~$ ip route show table 65743 | wc -l
 
 Sends ICMP echo requests and times the replies.
 
-```
+```text
 akshat@AK-work:~$ ping -c 4 8.8.8.8
 PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
 64 bytes from 8.8.8.8: icmp_seq=1 ttl=118 time=26.4 ms
@@ -172,6 +175,8 @@ PING 172.20.0.1 (172.20.0.1) 56(84) bytes of data.
 rtt min/avg/max/mdev = 1.656/3.807/5.959/2.151 ms
 ```
 
+**What I understood:**
+
 - **`ttl=118`** on the Google reply. TTL starts at a round number (128 here) and each router decrements it, so roughly 10 hops away. The gateway ping comes back `ttl=255`, one hop.
 - **`time=`** is the round trip. 1.6ms to my own router, 26–95ms to Google. The spread on the 8.8.8.8 pings (26ms to 95ms) is Wi-Fi plus the VPN.
 - **`0% packet loss`** is the number that matters when you are diagnosing something.
@@ -185,7 +190,7 @@ rtt min/avg/max/mdev = 1.656/3.807/5.959/2.151 ms
 
 `traceroute` is not installed here, so `tracepath` — same idea, no root needed.
 
-```
+```text
 akshat@AK-work:~$ tracepath -n -m 12 8.8.8.8
  1?: [LOCALHOST]                      pmtu 1280
  1:  no reply
@@ -204,6 +209,8 @@ akshat@AK-work:~$ tracepath -n -m 12 8.8.8.8
      Resume: pmtu 1280
 ```
 
+**What I understood:**
+
 **Every hop is `no reply`,** which looks like a failure but is not. `ping 8.8.8.8` works fine. The reason is the VPN: traffic is encapsulated and sent through the WireGuard tunnel, so the intermediate routers on the physical path never see the inner packet and cannot return the ICMP "time exceeded" messages that traceroute depends on. Cloudflare's edge does not generate them either.
 
 So the real lesson: **traceroute through a VPN shows you nothing**, and `pmtu 1280` at the top is a hint as to why — that is the tunnel MTU, not a normal Ethernet 1500.
@@ -214,7 +221,7 @@ So the real lesson: **traceroute through a VPN shows you nothing**, and `pmtu 12
 
 `ss` replaces `netstat`. `-t` TCP, `-u` UDP, `-l` listening, `-p` process, `-n` numeric.
 
-```
+```text
 akshat@AK-work:~$ ss -tulpn | head -20
 Netid State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                         
 udp   UNCONN 0      0            0.0.0.0:5353       0.0.0.0:*                                   
@@ -234,6 +241,8 @@ tcp   LISTEN 0      511        127.0.0.1:8080       0.0.0.0:*    users:(("node",
 tcp   LISTEN 0      128            [::1]:631           [::]:*
 ```
 
+**What I understood:**
+
 - **`127.0.0.53:53`** is `systemd-resolved`, the local DNS stub. Everything on this machine asks it, and it forwards upstream.
 - **`127.0.0.1:631`** is CUPS, the print server.
 - **`127.0.0.1:8080`** is `code-server`, bound to loopback only. Worth noting: a loopback-only listener still owns the port as far as the rest of the system is concerned, which is why the Docker assignments publish their containers elsewhere.
@@ -243,7 +252,7 @@ The distinction that matters: **`127.0.0.1:` is reachable only from this machine
 
 Established connections rather than listeners:
 
-```
+```text
 akshat@AK-work:~$ ss -tn state established | head -12
 Recv-Q Send-Q                          Local Address:Port                          Peer Address:PortProcess
 0      0                                  172.16.0.2:54724                        160.79.104.10:443        
@@ -257,7 +266,7 @@ The local address on every one of those is `172.16.0.2` or the WARP IPv6 — the
 
 Summary counts:
 
-```
+```text
 akshat@AK-work:~$ ss -s
 Total: 1155
 TCP:   13 (estab 5, closed 0, orphaned 0, timewait 0)
@@ -274,7 +283,7 @@ FRAG	  0         0         0
 
 ## 6. `dig` — DNS in detail
 
-```
+```text
 akshat@AK-work:~$ dig google.com
 
 ; <<>> DiG 9.18.39-0ubuntu0.22.04.3-Ubuntu <<>> google.com
@@ -302,6 +311,8 @@ google.com.		219	IN	A	192.178.173.100
 ;; MSG SIZE  rcvd: 135
 ```
 
+**What I understood:**
+
 The sections are the structure of a DNS response:
 
 - **`status: NOERROR`** — the query succeeded. `NXDOMAIN` means no such name.
@@ -313,7 +324,7 @@ The sections are the structure of a DNS response:
 
 `+short` when you just want the value:
 
-```
+```text
 akshat@AK-work:~$ dig +short google.com
 192.178.173.101
 192.178.173.139
@@ -325,7 +336,7 @@ akshat@AK-work:~$ dig +short google.com
 
 Other record types and reverse lookups:
 
-```
+```text
 akshat@AK-work:~$ dig @8.8.8.8 +short github.com
 20.200.245.247
 akshat@AK-work:~$ dig +short MX google.com
@@ -338,7 +349,7 @@ dns.google.
 
 Where the resolver config actually lives:
 
-```
+```text
 akshat@AK-work:~$ resolvectl status | head -20
 Global
          Protocols: -LLMNR -mDNS -DNSOverTLS DNSSEC=no/unsupported
@@ -379,7 +390,7 @@ So `cat /etc/resolv.conf` on a modern Ubuntu box tells you almost nothing. `reso
 
 ## 7. `/etc/hosts` and the resolution order
 
-```
+```text
 akshat@AK-work:~$ cat /etc/hosts
 127.0.0.1	localhost
 127.0.1.1	AK-work
@@ -398,6 +409,8 @@ akshat@AK-work:~$ grep hosts /etc/nsswitch.conf
 hosts:          files mdns4_minimal [NOTFOUND=return] dns
 ```
 
+**What I understood:**
+
 `hosts: files mdns4_minimal [NOTFOUND=return] dns` is the order name resolution is tried in:
 
 1. **`files`** — `/etc/hosts` first. A name here wins over DNS, which is how you point a domain at a test box.
@@ -412,7 +425,7 @@ The `kubernetes.docker.internal` entry was added by Docker Desktop. `127.0.1.1 A
 
 ## 8. `curl` — actually talk to a web server
 
-```
+```text
 akshat@AK-work:~$ curl -sI https://example.com
 HTTP/2 200 
 date: Thu, 03 Sep 2026 10:36:11 GMT
@@ -426,11 +439,13 @@ cf-cache-status: HIT
 cf-ray: a3541ca8ca3074eb-BOM
 ```
 
+**What I understood:**
+
 `-I` sends a `HEAD` request — headers only, no body. `HTTP/2 200` is the status. `server: cloudflare` and `cf-cache-status: HIT` say the page came from a Cloudflare edge cache rather than the origin.
 
 `-w` prints timing broken down by phase, which is the useful part:
 
-```
+```text
 akshat@AK-work:~$ curl -o /dev/null -s -w "dns: %{time_namelookup}s connect: %{time_connect}s tls: %{time_appconnect}s ttfb: %{time_starttransfer}s total: %{time_total}s\n" https://example.com
 dns: 0.000926s connect: 0.026230s tls: 0.078985s ttfb: 0.128344s total: 0.128470s
 ```
@@ -439,7 +454,7 @@ DNS was 0.9ms (cached), TCP connect 26ms, TLS handshake finished at 79ms, first 
 
 Following a redirect:
 
-```
+```text
 akshat@AK-work:~$ curl -s -o /dev/null -w "%{http_code} %{url_effective} -> %{redirect_url}\n" http://github.com
 301 http://github.com/ -> https://github.com/
 ```
@@ -450,7 +465,7 @@ akshat@AK-work:~$ curl -s -o /dev/null -w "%{http_code} %{url_effective} -> %{re
 
 ## 9. `wget` — download files
 
-```
+```text
 akshat@AK-work:~$ wget https://example.com/ -O example.html
 --2026-09-03 16:06:11--  https://example.com/
 Resolving example.com (example.com)... 2606:4700:10::6814:179a, 2606:4700:10::ac42:93f3, 104.20.23.154, ...
@@ -468,6 +483,8 @@ akshat@AK-work:~$ head -4 example.html
 <!doctype html><html lang="en"><head><title>Example Domain</title><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width, initial-scale=1"><style>body{background:#eee;width:60vw;margin:15vh auto;font-family:system-ui,sans-serif}h1{font-size:1.5em}div{opacity:0.8}a:link,a:visited{color:#348}</style></head><body><div><h1>Example Domain</h1><p>This domain is for use in documentation examples without needing permission. Avoid use in operations.</p><p><a href="https://iana.org/domains/example">Learn more</a></p></div></body></html>
 ```
 
+**What I understood:**
+
 The difference from `curl`: **`wget` saves to a file by default, `curl` prints to stdout.** `curl` is for talking to APIs, `wget` for fetching files (and it can recurse a whole site).
 
 Worth noting the first line of the output — `Resolving example.com... 2606:4700:10::ac42:93f3, ...` and then `Connecting to ...|2606:...|:443` — it tried IPv6 first and got it, same as `ping` did.
@@ -478,7 +495,7 @@ Worth noting the first line of the output — `Resolving example.com... 2606:470
 
 Netcat. `-z` just checks, sends no data; `-v` says what happened.
 
-```
+```text
 akshat@AK-work:~$ nc -zv 172.20.0.1 80
 Connection to 172.20.0.1 80 port [tcp/http] succeeded!
 akshat@AK-work:~$ nc -zv 127.0.0.1 8080
@@ -486,6 +503,8 @@ Connection to 127.0.0.1 8080 port [tcp/http-alt] succeeded!
 akshat@AK-work:~$ nc -zv 127.0.0.1 9999
 nc: connect to 127.0.0.1 port 9999 (tcp) failed: Connection refused
 ```
+
+**What I understood:**
 
 Three outcomes worth knowing apart:
 
@@ -501,11 +520,13 @@ That distinction is the whole diagnostic value: "refused" means you reached the 
 
 The ARP table: which IP maps to which MAC on the local segment.
 
-```
+```text
 akshat@AK-work:~$ ip neigh
 172.20.0.1 dev wlo1 lladdr aa:bb:cc:00:33:01 REACHABLE
 172.17.0.2 dev docker0 lladdr 02:42:dd:00:22:02 DELAY
 ```
+
+**What I understood:**
 
 `REACHABLE` means confirmed recently. `DELAY` and `STALE` mean the entry is aging and will be re-verified before use. ARP only covers the local segment — you never see a MAC for anything past the router, which is why only the gateway and a Docker container appear here.
 
@@ -513,7 +534,7 @@ akshat@AK-work:~$ ip neigh
 
 ## 12. `hostname` and name lookups from the shell
 
-```
+```text
 akshat@AK-work:~$ hostname
 AK-work
 akshat@AK-work:~$ hostname -I
@@ -530,6 +551,8 @@ github.com has address 20.207.73.82
 github.com mail is handled by 0 github-com.mail.protection.outlook.com.
 ```
 
+**What I understood:**
+
 `hostname -I` lists every address rather than resolving the name. `getent hosts` goes through NSS — the same path a normal program takes, honouring `/etc/hosts` — whereas `dig` talks to DNS directly. When `dig` works and your application does not, that difference is usually the reason.
 
 ---
@@ -540,7 +563,7 @@ Everything above tells you *about* the network. `tcpdump` shows you what is actu
 
 I ran this between two containers on their own bridge network. A container gets `CAP_NET_RAW` in Docker's default capability set, which is exactly the privilege packet capture needs, so this works without touching the host:
 
-```
+```text
 akshat@AK-work:~$ docker network create capture-net
 akshat@AK-work:~$ docker run -d --name sniffer --network capture-net alpine:3.20 sleep 400
 akshat@AK-work:~$ docker run -d --name pinger  --network capture-net alpine:3.20 sleep 400
@@ -549,11 +572,13 @@ akshat@AK-work:~$ docker exec sniffer grep CapEff /proc/self/status
 CapEff:	00000000a80425fb
 ```
 
+**What I understood:**
+
 That capability mask has bit 13 set, which is `CAP_NET_RAW` — the right to open a raw socket.
 
 Which interfaces it can see:
 
-```
+```text
 1.eth0 [Up, Running, Connected]
 2.any (Pseudo-device that captures on all interfaces) [Up, Running]
 3.lo [Up, Running, Loopback]
@@ -567,7 +592,7 @@ Which interfaces it can see:
 
 `tcpdump` in one shell, `ping` from the other container:
 
-```
+```text
 akshat@AK-work:~$ docker exec -d sniffer sh -c 'tcpdump -i eth0 -n icmp -c 4 > /tmp/icmp.txt'
 akshat@AK-work:~$ docker exec pinger ping -c 4 172.18.0.2
 akshat@AK-work:~$ docker exec sniffer cat /tmp/icmp.txt
@@ -592,7 +617,7 @@ The output is the request/reply pairing, alternating: `172.18.0.3 > 172.18.0.2: 
 
 The interesting one, because it shows something the earlier sections only described:
 
-```
+```text
 akshat@AK-work:~$ docker exec -d sniffer sh -c 'tcpdump -i any -n port 53 -c 4 > /tmp/dns.txt'
 akshat@AK-work:~$ docker exec sniffer nslookup example.com
 akshat@AK-work:~$ docker exec sniffer cat /tmp/dns.txt
@@ -614,7 +639,7 @@ Reading the answers: one query came back with two **A** records and a separate o
 
 ### The TCP handshake
 
-```
+```text
 akshat@AK-work:~$ docker exec -d sniffer sh -c 'tcpdump -i eth0 -n -S "tcp[tcpflags] & (tcp-syn|tcp-ack) != 0 and port 80" -c 3 > /tmp/tcp.txt'
 akshat@AK-work:~$ docker exec sniffer curl -s -o /dev/null http://example.com
 akshat@AK-work:~$ docker exec sniffer cat /tmp/tcp.txt
@@ -682,11 +707,27 @@ The debugging order I ended up with: **`ip a` → `ip r` → `ping` gateway → 
 
 ## Screenshots
 
-| | |
-|---|---|
-| Addresses and routing | ![addresses](../screenshots/03-networking/addresses-routing.png) |
-| `ping` and `tracepath` | ![ping](../screenshots/03-networking/ping-tracepath.png) |
-| `ss` — listeners and connections | ![ss](../screenshots/03-networking/ss-sockets.png) |
-| DNS: `dig` and `resolvectl` | ![dns](../screenshots/03-networking/dns.png) |
-| `curl`, `wget`, `nc` | ![http](../screenshots/03-networking/curl-wget-nc.png) |
-| `tcpdump` — ICMP, DNS and the TCP handshake | ![tcpdump](../screenshots/03-networking/tcpdump.png) |
+**Addresses and routing**
+
+![addresses](../screenshots/03-networking/addresses-routing.png)
+
+**`ping` and `tracepath`**
+
+![ping](../screenshots/03-networking/ping-tracepath.png)
+
+**`ss` — listeners and connections**
+
+![ss](../screenshots/03-networking/ss-sockets.png)
+
+**DNS: `dig` and `resolvectl`**
+
+![dns](../screenshots/03-networking/dns.png)
+
+**`curl`, `wget`, `nc`**
+
+![http](../screenshots/03-networking/curl-wget-nc.png)
+
+**`tcpdump` — ICMP, DNS and the TCP handshake**
+
+![tcpdump](../screenshots/03-networking/tcpdump.png)
+

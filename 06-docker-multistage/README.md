@@ -1,10 +1,10 @@
 # Docker Multi-Stage Build Homework
 
-**Akshat Kushwaha**
-**Enrollment Number:** `24bcs10060`
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 3 September 2026
 
-```
+```text
 akshat@AK-work:~$ docker --version
 Docker version 28.2.2, build 28.2.2-0ubuntu1~22.04.1
 ```
@@ -66,7 +66,7 @@ Three details that matter:
 
 ### Building
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ docker build -t hello-multistage .
 
 Sending build context to Docker daemon  6.656kB
@@ -150,7 +150,7 @@ Both images built. Note step 7, `FROM alpine:3.20` — that is stage two startin
 
 ### Running the container
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ docker run -d -p 172.20.0.64:8080:8080 --name hello-multistage hello-multistage
 71e947fafec9716d5913ece32947eb6e903fd076649fff1c94858d3ffe00fd97
 ```
@@ -161,14 +161,14 @@ The task asks to confirm the application runs on port 8080, and it does — `doc
 
 Getting there taught me the most useful thing in this assignment, which is that "port 8080" is two different numbers. `code-server` already owns 8080 on this machine:
 
-```
+```text
 akshat@AK-work:~$ ss -tulpn | grep 8080
 tcp   LISTEN 0  511   127.0.0.1:8080   0.0.0.0:*   users:(("node",pid=1250,fd=22))
 ```
 
 It is bound to `127.0.0.1` only, so my first instinct was that `-p 8080:8080` would be fine. It is not:
 
-```
+```text
 akshat@AK-work:~$ docker run -d -p 8080:8080 --name hello-multistage hello-multistage
 docker: Error response from daemon: failed to set up container networking: driver failed
 programming external connectivity on endpoint hello-multistage: failed to bind host port
@@ -177,7 +177,7 @@ programming external connectivity on endpoint hello-multistage: failed to bind h
 
 `-p 8080:8080` is shorthand for `-p 0.0.0.0:8080:8080`, and you cannot bind `0.0.0.0:8080` while anything holds `127.0.0.1:8080` — the wildcard bind wants every address on the box, loopback included. The fix is to name the interface I actually want:
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ docker run -d -p 172.20.0.64:8080:8080 --name hello-multistage hello-multistage
 71e947fafec9716d5913ece32947eb6e903fd076649fff1c94858d3ffe00fd97
 ```
@@ -186,7 +186,7 @@ Now both services coexist: `code-server` on loopback:8080, my container on the L
 
 ### Accessing the application
 
-```
+```text
 akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ docker logs hello-multistage
 2026/09/03 10:50:18 listening on :8080
 akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ curl -s http://172.20.0.64:8080
@@ -207,7 +207,7 @@ hello-multistage   hello-multistage   Up 43 seconds   172.20.0.64:8080->8080/tcp
 
 The required string is there:
 
-```
+```text
 <h1>Hello World from Docker multi-stage build</h1>
 ```
 
@@ -226,7 +226,7 @@ And in a browser:
 
 **`docker ps` showing the container on port 8080:**
 
-```
+```text
 akshat@AK-work:~$ docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 NAMES              IMAGE              STATUS              PORTS
 hello-multistage   hello-multistage   Up About a minute   172.20.0.64:8080->8080/tcp
@@ -240,7 +240,7 @@ hello-multistage   hello-multistage   Up About a minute   172.20.0.64:8080->8080
 
 This is the part worth measuring. Same application, same source, built both ways:
 
-```
+```text
 akshat@AK-work:~$ docker images | grep -E 'REPOSITORY|hello-multistage|hello-singlestage|golang|alpine'
 REPOSITORY          TAG             IMAGE ID       CREATED          SIZE
 hello-singlestage   latest          3b83b4730aaf   10 minutes ago   303MB
@@ -253,7 +253,7 @@ golang              1.22-alpine     4129f51f28c9   19 months ago    231MB
 
 The layer history explains exactly where 12.6MB comes from:
 
-```
+```text
 akshat@AK-work:~$ docker history hello-multistage
 IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
 6167001e5b31   10 minutes ago   /bin/sh -c #(nop)  CMD ["/usr/local/bin/serv…   0B        
@@ -271,7 +271,7 @@ bf8527eb54c3   4 months ago     CMD ["/bin/sh"]                                 
 
 Size is suggestive; this is conclusive.
 
-```
+```text
 # the single-stage image still has the whole Go toolchain
 akshat@AK-work:~/Downloads/DevOps/06-docker-multistage$ docker run --rm hello-singlestage go version
 go version go1.22.12 linux/amd64
@@ -300,7 +300,7 @@ That is a **security** result as much as a size one. An attacker who gets code e
 
 The task asks for at least three different kinds of application deployed with Docker. I used the Node.js, Python and Java apps from Assignment 5, running alongside this Go one — four different runtimes at once.
 
-```
+```text
 akshat@AK-work:~$ docker run -d -p 3000:3000 --name nodejs-hello nodejs-hello
 586fe57f5bec51135ac446d63e3f7bc4179ddd1c5b3be342e7d4a28c5e3f5e97
 akshat@AK-work:~$ docker run -d -p 5000:5000 --name python-hello python-hello
@@ -346,19 +346,31 @@ Also worth noting from `docker ps`: all four run simultaneously with no conflict
 
 ## Screenshots
 
-| | |
-|---|---|
-| Building both images | ![build](../screenshots/06-multistage/build-both.png) |
-| Running, and `docker ps` on port 8080 | ![running](../screenshots/06-multistage/running-on-8080.png) |
-| The app in a browser | ![browser](../screenshots/06-multistage/app-port-8080.png) |
-| Proving there is no Go toolchain in the runtime image | ![proof](../screenshots/06-multistage/no-toolchain.png) |
-| Task 3 — Node, Python, Java alongside | ![task3](../screenshots/06-multistage/task3-three-apps.png) |
+**Building both images**
+
+![build](../screenshots/06-multistage/build-both.png)
+
+**Running, and `docker ps` on port 8080**
+
+![running](../screenshots/06-multistage/running-on-8080.png)
+
+**The app in a browser**
+
+![browser](../screenshots/06-multistage/app-port-8080.png)
+
+**Proving there is no Go toolchain in the runtime image**
+
+![proof](../screenshots/06-multistage/no-toolchain.png)
+
+**Task 3 — Node, Python, Java alongside**
+
+![task3](../screenshots/06-multistage/task3-three-apps.png)
 
 ---
 
 ## Cleanup
 
-```
+```text
 akshat@AK-work:~$ docker rm -f hello-multistage nodejs-hello python-hello java-hello
 hello-multistage
 nodejs-hello

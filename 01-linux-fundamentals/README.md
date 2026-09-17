@@ -1,7 +1,7 @@
 # Linux Fundamentals Homework
 
-**Akshat Kushwaha**
-**Enrollment Number:** `24bcs10060`
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 3 September 2026
 
 Four tasks: the difference between the two kinds of link, the difference between the two commands for adding a user, reading logs with `journalctl`, and working through the command cheat sheet.
@@ -19,7 +19,7 @@ Four tasks: the difference between the two kinds of link, the difference between
 
 Everything below was done on my own Ubuntu machine.
 
-```
+```text
 akshat@AK-work:~$ hostnamectl
  Static hostname: AK-work
        Icon name: computer-laptop
@@ -33,7 +33,7 @@ Operating System: Ubuntu 22.04.5 LTS
   Hardware Model: OMEN by HP Gaming Laptop 16-xd0xxx
 ```
 
-```
+```text
 akshat@AK-work:~$ df -T /
 Filesystem     Type 1K-blocks      Used Available Use% Mounted on
 /dev/nvme0n1p4 ext4 147163036 124942956  14671768  90% /
@@ -92,7 +92,7 @@ find . -samefile f     # every hard link to the same inode
 
 Starting clean:
 
-```
+```text
 akshat@AK-work:~$ mkdir -p ~/linkdemo && cd ~/linkdemo
 akshat@AK-work:~/linkdemo$ echo "Hello DevOps" > original.txt
 akshat@AK-work:~/linkdemo$ ls -li
@@ -102,7 +102,7 @@ total 4
 
 One file, inode 5112884, link count 1. Now both kinds of link:
 
-```
+```text
 akshat@AK-work:~/linkdemo$ ln original.txt hardlink.txt
 akshat@AK-work:~/linkdemo$ ln -s original.txt softlink.txt
 akshat@AK-work:~/linkdemo$ ls -li
@@ -120,7 +120,7 @@ This one listing shows basically everything:
 
 `stat` says the same thing more explicitly:
 
-```
+```text
 akshat@AK-work:~/linkdemo$ stat original.txt
   File: original.txt
   Size: 13        	Blocks: 8          IO Block: 4096   regular file
@@ -134,7 +134,7 @@ Change: 2026-09-03 15:44:08.159970474 +0530
 
 Small thing I noticed: Change is later than Modify. I never touched the contents, but adding the hard link changed the inode's metadata (the link count), and ctime tracks that.
 
-```
+```text
 akshat@AK-work:~/linkdemo$ readlink softlink.txt
 original.txt
 akshat@AK-work:~/linkdemo$ readlink -f softlink.txt
@@ -146,7 +146,7 @@ akshat@AK-work:~/linkdemo$ find . -samefile original.txt
 
 Writing through one name shows up in the others, because there is only one file:
 
-```
+```text
 akshat@AK-work:~/linkdemo$ echo "Added via hard link" >> hardlink.txt
 akshat@AK-work:~/linkdemo$ cat original.txt
 Hello DevOps
@@ -160,7 +160,7 @@ Added via hard link
 
 This is the part worth remembering, and it is where the two stop looking alike.
 
-```
+```text
 akshat@AK-work:~/linkdemo$ rm original.txt
 akshat@AK-work:~/linkdemo$ cat hardlink.txt
 Hello DevOps
@@ -171,7 +171,7 @@ cat: softlink.txt: No such file or directory
 
 The hard link still has the data. The symlink is pointing at a name that no longer exists, so it fails, and the error is about `softlink.txt` even though the missing thing is `original.txt`, which is a bit confusing the first time you see it.
 
-```
+```text
 akshat@AK-work:~/linkdemo$ ls -li
 total 4
 5112884 -rw-rw-r-- 1 akshat akshat 33 Sep  3 15:44 hardlink.txt
@@ -188,14 +188,14 @@ Tried both, mostly to see the actual error messages.
 
 Cross-filesystem — `/dev/shm` is tmpfs so it is definitely a different filesystem from my home:
 
-```
+```text
 akshat@AK-work:~/linkdemo$ ln hardlink.txt /dev/shm/test.txt
 ln: failed to create hard link '/dev/shm/test.txt' => 'hardlink.txt': Invalid cross-device link
 ```
 
 Makes sense once you know a directory entry stores an inode *number*. That number means nothing on a different filesystem. A symlink stores a path, which is why the same thing works fine:
 
-```
+```text
 akshat@AK-work:~/linkdemo$ ln -s ~/linkdemo/hardlink.txt /dev/shm/test.txt
 akshat@AK-work:~/linkdemo$ ls -l /dev/shm/test.txt
 lrwxrwxrwx 1 akshat akshat 34 Sep  3 15:44 /dev/shm/test.txt -> /home/akshat/linkdemo/hardlink.txt
@@ -203,7 +203,7 @@ lrwxrwxrwx 1 akshat akshat 34 Sep  3 15:44 /dev/shm/test.txt -> /home/akshat/lin
 
 And directories:
 
-```
+```text
 akshat@AK-work:~/linkdemo$ ln ~/linkdemo ~/dirlink
 ln: /home/akshat/linkdemo: hard link not allowed for directory
 ```
@@ -212,7 +212,7 @@ Even with sudo. The reason is that it would let you build loops in the directory
 
 ### Cleaning up
 
-```
+```text
 akshat@AK-work:~/linkdemo$ rm softlink.txt          # removes the link only
 akshat@AK-work:~/linkdemo$ unlink hardlink.txt      # unlink works too
 akshat@AK-work:~/linkdemo$ rm /dev/shm/test.txt
@@ -264,7 +264,7 @@ Relative (`ln -sr`) survives the tree being moved or mounted somewhere else, whi
 
 Both exist on Ubuntu and they are not two versions of the same thing. Easiest way to see it:
 
-```
+```text
 akshat@AK-work:~$ which adduser useradd
 /usr/sbin/adduser
 /usr/sbin/useradd
@@ -275,7 +275,7 @@ akshat@AK-work:~$ file /usr/sbin/adduser /usr/sbin/useradd
 
 `useradd` is a compiled binary. `adduser` is a Perl script, and if you read it, it shells out to `useradd`. Different packages too:
 
-```
+```text
 akshat@AK-work:~$ dpkg -S /usr/sbin/adduser /usr/sbin/useradd
 adduser: /usr/sbin/adduser
 passwd: /usr/sbin/useradd
@@ -283,7 +283,7 @@ passwd: /usr/sbin/useradd
 
 So `useradd` is the low-level tool from `shadow`, and `adduser` is Debian's friendly wrapper around it. You can just read the wrapper, which is 1150 lines of Perl:
 
-```
+```text
 akshat@AK-work:~$ head -4 /usr/sbin/adduser
 #!/usr/bin/perl
 
@@ -295,7 +295,7 @@ akshat@AK-work:~$ wc -l /usr/sbin/adduser
 
 And the different default shells the table below mentions are not folklore, they are literally two different config files:
 
-```
+```text
 akshat@AK-work:~$ grep -E "^(DHOME|DSHELL|SHELL)" /etc/adduser.conf /etc/default/useradd
 /etc/adduser.conf:DSHELL=/bin/bash
 /etc/adduser.conf:DHOME=/home
@@ -333,7 +333,7 @@ Ansible's `user` module, for what it's worth, drives `useradd` underneath.
 
 I did this in a throwaway `ubuntu:22.04` container rather than on the laptop itself. Same distribution, same `adduser` and `useradd` binaries from the same packages, but nothing left behind on my own machine when I am finished — creating and deleting real accounts on a working machine to prove a point is a bad habit to get into.
 
-```
+```text
 akshat@AK-work:~$ docker run -d --name usertest ubuntu:22.04 sleep 400
 akshat@AK-work:~$ docker exec usertest bash -c 'cat /etc/os-release | head -2; which adduser useradd'
 PRETTY_NAME="Ubuntu 22.04.5 LTS"
@@ -346,7 +346,7 @@ Same 22.04.5 as the host, so the defaults are the ones that matter.
 
 `adduser` is the recommended command, and it is interactive:
 
-```
+```text
 root@usertest:/# adduser devops_test
 Adding user `devops_test' ...
 Adding new group `devops_test' (1000) ...
@@ -370,7 +370,7 @@ Five distinct jobs in that one command: it made the group, made the user, create
 
 Checking what it actually built:
 
-```
+```text
 root@usertest:/# id devops_test
 uid=1000(devops_test) gid=1000(devops_test) groups=1000(devops_test)
 root@usertest:/# getent passwd devops_test
@@ -397,7 +397,7 @@ Four things to read out of that:
 
 None of those are accidents. They come from `/etc/adduser.conf`:
 
-```
+```text
 root@usertest:/# grep -E "^(DSHELL|DHOME|DIR_MODE)" /etc/adduser.conf
 DSHELL=/bin/bash
 DHOME=/home
@@ -406,7 +406,7 @@ DIR_MODE=0750
 
 And logging in works:
 
-```
+```text
 root@usertest:/# su - devops_test -c "pwd; whoami; echo \$SHELL"
 /home/devops_test
 devops_test
@@ -417,7 +417,7 @@ Landed in the right home directory, as the right user, with the right shell.
 
 If the account needed admin rights:
 
-```
+```text
 root@usertest:/# usermod -aG sudo devops_test
 root@usertest:/# id devops_test
 uid=1000(devops_test) gid=1000(devops_test) groups=1000(devops_test),27(sudo)
@@ -429,7 +429,7 @@ The `-a` is not optional. `usermod -G sudo devops_test` without it would *replac
 
 The contrast is the whole point of this task, so the same thing with no flags at all:
 
-```
+```text
 root@usertest:/# useradd useradd_test
 root@usertest:/# getent passwd useradd_test
 useradd_test:x:1001:1001::/home/useradd_test:/bin/sh
@@ -444,7 +444,7 @@ Three problems in one command, and they line up exactly with the config files:
 1. The passwd entry **claims** a home at `/home/useradd_test` that was never created. `useradd` only creates it with `-m`.
 2. The shell is **`/bin/sh`**, which is dash on Ubuntu — no history, no tab completion, no prompt customisation. That comes from `/etc/default/useradd`:
 
-```
+```text
 root@usertest:/# grep -E "^SHELL" /etc/default/useradd
 SHELL=/bin/sh
 ```
@@ -453,7 +453,7 @@ SHELL=/bin/sh
 
 The consequence is visible immediately:
 
-```
+```text
 root@usertest:/# su - useradd_test -c "pwd; whoami"
 su: warning: cannot change directory to /home/useradd_test: No such file or directory
 /
@@ -481,7 +481,7 @@ and `docker exec hello-multistage id` returns `uid=10001(appuser) gid=10001(appu
 
 ### Cleanup
 
-```
+```text
 root@usertest:/# deluser --remove-home devops_test
 /usr/sbin/deluser: In order to use the --remove-home, --remove-all-files, and --backup features,
 you need to install the `perl' package. To accomplish that, run
@@ -490,7 +490,7 @@ apt-get install perl.
 
 Worth knowing: `deluser` is a Perl script, and the `ubuntu:22.04` base image is stripped down far enough that Perl is not installed. `adduser` itself works because it degrades gracefully; `--remove-home` does not. After `apt-get install -y perl`:
 
-```
+```text
 root@usertest:/# deluser --remove-home devops_test
 Looking for files to backup/remove ...
 Removing files ...
@@ -509,7 +509,7 @@ root@usertest:/# ls /home
 
 Then the container itself goes away:
 
-```
+```text
 akshat@AK-work:~$ docker rm -f usertest
 usertest
 ```
@@ -543,7 +543,7 @@ sudo systemctl restart systemd-journald
 
 Mine was already persistent:
 
-```
+```text
 akshat@AK-work:~$ journalctl --disk-usage
 Archived and active journals take up 3.9G in the file system.
 ```
@@ -581,7 +581,7 @@ journalctl --list-boots
 journalctl -k            # kernel only, same as dmesg
 ```
 
-```
+```text
 akshat@AK-work:~$ journalctl --list-boots | tail -5
  -4 1de81363723742a9aeb7abb3bfbdc004 Wed 2026-04-15 19:03:59 IST—Wed 2026-04-15 13:35:40 IST
  -3 c45e0c0dcae64475a9bd80fe51eb8ce8 Sat 2026-04-25 23:30:52 IST—Sat 2026-04-25 18:08:26 IST
@@ -596,7 +596,7 @@ A detail worth noticing: on a couple of rows the "last entry" is *earlier* than 
 
 By priority. These are the syslog levels, 0 emerg through 7 debug:
 
-```
+```text
 akshat@AK-work:~$ journalctl -p err -b --no-pager | tail -6
 Sep 03 15:29:21 AK-work wpa_supplicant[906]: bgscan simple: Failed to enable signal strength monitoring
 Sep 03 15:29:39 AK-work wpa_supplicant[906]: bgscan simple: Failed to enable signal strength monitoring
@@ -654,14 +654,14 @@ journalctl --verify
 
 The obvious choice would have been `ssh`, but this machine has no `openssh-server` installed:
 
-```
+```text
 akshat@AK-work:~$ systemctl status ssh --no-pager
 Unit ssh.service could not be found.
 ```
 
 So I used `docker.service` instead, which is running here and is more relevant to the rest of the module anyway.
 
-```
+```text
 akshat@AK-work:~$ systemctl status docker --no-pager
 ● docker.service - Docker Application Container Engine
      Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
@@ -686,7 +686,7 @@ Three useful things in that one screen: `Loaded:` shows the unit file path and t
 
 The last full stop/start cycle, which is what you would look at after a restart:
 
-```
+```text
 akshat@AK-work:~$ journalctl -u docker.service --since today --no-pager
 Sep 03 15:22:23 AK-work systemd[1]: Stopping Docker Application Container Engine...
 Sep 03 15:22:23 AK-work dockerd[2276]: time="2026-09-03T15:22:23.654537085+05:30" level=info msg="Processing signal 'terminated'"
@@ -702,7 +702,7 @@ You can read the whole cycle in order, and the PID changes from **2276** to **69
 
 Filtering to just this service's errors for today:
 
-```
+```text
 akshat@AK-work:~$ journalctl -u docker.service -p err --since today --no-pager
 -- No entries --
 ```
@@ -711,7 +711,7 @@ Nothing, which is the answer you want.
 
 Searching within one service, using `-g`:
 
-```
+```text
 akshat@AK-work:~$ journalctl -u docker.service -g "Daemon has completed" --since today --no-pager
 Sep 03 20:19:54 AK-work dockerd[2276]: time="2026-09-03T20:19:54.394651398+05:30" level=info msg="Daemon has completed initialization"
 -- Boot edb5d589e9cf4ab3af5c5949c36bbae5 --
@@ -722,7 +722,7 @@ Two hits, one per boot, and journalctl inserts a `-- Boot <id> --` separator so 
 
 Full metadata for one entry, which shows how much is attached to a single log line:
 
-```
+```text
 akshat@AK-work:~$ journalctl -u docker.service -n 1 -o verbose --no-pager
 Thu 2026-09-03 15:26:02.571475 IST [s=b64e8a94fcea492ab058673ba2294d62;i=f5b3;b=edb5d589e9cf4ab3af5c5949c36bbae5;m=3faca2e;t=65a9128dca8dc;x=5fa9c0408a991e28]
     PRIORITY=6
@@ -759,7 +759,7 @@ Worth pulling apart, because it explains why the journal is more than a text log
 
 Following it live in one terminal while doing something in another. Here I ran `journalctl -u docker.service -f`, then in a second terminal `docker run --rm alpine:3.20 echo "hello from a container"`:
 
-```
+```text
 akshat@AK-work:~$ journalctl -u docker.service -f
 Sep 03 15:26:02 AK-work dockerd[6929]: time="2026-09-03T15:26:02.566957744+05:30" level=info msg="Completed buildkit initialization"
 Sep 03 15:26:02 AK-work dockerd[6929]: time="2026-09-03T15:26:02.571258276+05:30" level=info msg="Daemon has completed initialization"
@@ -772,7 +772,7 @@ Sep 03 15:26:02 AK-work systemd[1]: Started Docker Application Container Engine.
 
 Two more filters I tried, neither tied to a unit:
 
-```
+```text
 akshat@AK-work:~$ journalctl -t sudo -n 5 --no-pager
 Sep 03 15:21:43 AK-work sudo[10648]: pam_unix(sudo:auth): conversation failed
 Sep 03 15:21:43 AK-work sudo[10648]: pam_unix(sudo:auth): auth could not identify password for [akshat]
@@ -782,7 +782,7 @@ Sep 03 15:43:44 AK-work sudo[24822]: pam_unix(sudo:auth): auth could not identif
 Sep 03 15:43:44 AK-work sudo[24822]:   akshat : a password is required ; PWD=/home/akshat/Downloads/DevOps ; USER=root ; COMMAND=/usr/bin/true
 ```
 
-```
+```text
 akshat@AK-work:~$ journalctl -F _SYSTEMD_UNIT | head -12
 whoopsie.service
 snap.docker.nvidia-container-toolkit.service
@@ -1067,14 +1067,32 @@ Ctrl+R is the biggest time saver of the lot. Start typing any part of an old com
 
 ## Screenshots
 
-| | |
-|---|---|
-| The machine everything was run on | ![setup](../screenshots/01-linux/setup-hostnamectl.png) |
-| Task 1 — hard links vs soft links, start to finish | ![links](../screenshots/01-linux/task1-links.png) |
-| Task 2 — what `adduser` and `useradd` actually are | ![adduser](../screenshots/01-linux/task2-adduser-vs-useradd.png) |
-| Task 2 — `adduser`, start to finish | ![adduser run](../screenshots/01-linux/task2-adduser-run.png) |
-| Task 2 — plain `useradd`, and the cleanup | ![useradd](../screenshots/01-linux/task2-useradd-contrast.png) |
-| Task 3 — `journalctl` for a specific service | ![journalctl](../screenshots/01-linux/task3-journalctl-service.png) |
-| Task 3 — `journalctl` filters and metadata | ![filters](../screenshots/01-linux/task3-journalctl-filters.png) |
+**The machine everything was run on**
+
+![setup](../screenshots/01-linux/setup-hostnamectl.png)
+
+**Task 1 — hard links vs soft links, start to finish**
+
+![links](../screenshots/01-linux/task1-links.png)
+
+**Task 2 — what `adduser` and `useradd` actually are**
+
+![adduser](../screenshots/01-linux/task2-adduser-vs-useradd.png)
+
+**Task 2 — `adduser`, start to finish**
+
+![adduser run](../screenshots/01-linux/task2-adduser-run.png)
+
+**Task 2 — plain `useradd`, and the cleanup**
+
+![useradd](../screenshots/01-linux/task2-useradd-contrast.png)
+
+**Task 3 — `journalctl` for a specific service**
+
+![journalctl](../screenshots/01-linux/task3-journalctl-service.png)
+
+**Task 3 — `journalctl` filters and metadata**
+
+![filters](../screenshots/01-linux/task3-journalctl-filters.png)
 
 ---

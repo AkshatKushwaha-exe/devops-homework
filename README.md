@@ -1,18 +1,25 @@
 # DevOps Homework
 
-**Akshat Kushwaha**
+**Name:** Akshat Kushwaha
+**Enrollment Number:** 24bcs10060
 
 All homework assignments for the DevOps module. Each one lives in its own numbered folder with its write-up in `README.md`. Every command shown was run on the machine described below, and the output is what it printed.
 
-| # | Assignment | Deliverable |
+## Submission links
+
+| # | Assignment | README |
 |---|---|---|
-| 01 | Linux Fundamentals — soft/hard links, `adduser` vs `useradd`, `journalctl`, command cheat sheet | [`01-linux-fundamentals/`](./01-linux-fundamentals/) |
-| 02 | Shell Scripting — system information script | [`02-shell-scripting/`](./02-shell-scripting/) |
-| 03 | Networking — commands, output and explanations | [`03-networking/`](./03-networking/) |
-| 04 | Git — `commit -a -m` vs `commit -m`, cherry-pick | [`04-git/`](./04-git/) |
-| 05 | Docker — six Hello World applications | [`05-docker-hello-world/`](./05-docker-hello-world/) |
-| 06 | Docker — multi-stage build | [`06-docker-multistage/`](./06-docker-multistage/) |
-| 07 | Docker — networking and volumes | [`07-docker-networking-volumes/`](./07-docker-networking-volumes/) |
+| 01 | Linux Fundamentals — soft/hard links, `adduser` vs `useradd`, `journalctl`, command cheat sheet | [01-linux-fundamentals/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/01-linux-fundamentals/README.md) |
+| 02 | Shell Scripting — system information script | [02-shell-scripting/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/02-shell-scripting/README.md) |
+| 03 | Networking — commands, output and explanations | [03-networking/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/03-networking/README.md) |
+| 04 | Git — `commit -a -m` vs `commit -m`, cherry-pick | [04-git/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/04-git/README.md) |
+| 05 | Docker — six Hello World applications | [05-docker-hello-world/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/05-docker-hello-world/README.md) |
+| 06 | Docker — multi-stage build | [06-docker-multistage/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/06-docker-multistage/README.md) |
+| 07 | Docker — networking and volumes | [07-docker-networking-volumes/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/07-docker-networking-volumes/README.md) |
+| 08 | Kubernetes Fundamentals — architecture, cluster, first Pod, namespaces | [08-kubernetes-fundamentals/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/08-kubernetes-fundamentals/README.md) |
+| 09 | Kubernetes Core Objects — Pod/ReplicaSet/Deployment/DaemonSet/StatefulSet, pod lifecycle, deployment strategies | [09-k8s-core-objects/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/09-k8s-core-objects/README.md) |
+| 10 | Kubernetes Networking & Services — all five Service types | [10-k8s-services/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/10-k8s-services/README.md) |
+| 11 | Kubernetes Ingress, ConfigMaps & Secrets | [11-k8s-ingress-configmaps-secrets/README.md](https://github.com/AkshatKushwaha-exe/devops-homework/blob/main/11-k8s-ingress-configmaps-secrets/README.md) |
 
 ## Environment
 
@@ -24,6 +31,12 @@ Everything was done on the same machine:
 - Bash 5.1.16
 - Go 1.22 (in-container), Node 20, Python 3.11, Temurin JDK/JRE 21
 
+For assignments 08–11:
+
+- minikube 1.39.0 running a **two-node** cluster on the Docker driver (`minikube` control plane + `minikube-m02` worker)
+- Kubernetes v1.37.0, containerd 2.3.4 inside the nodes, kindnet CNI
+- kubectl v1.37.0, ingress-nginx controller v1.15.1 (the minikube `ingress` addon)
+
 ## Screenshots
 
 `screenshots/` holds the evidence for each assignment, in two kinds:
@@ -31,7 +44,7 @@ Everything was done on the same machine:
 - **Browser screenshots** — real captures of the running containers, taken with headless Chrome pointed at `localhost`. These are the pages the applications actually served.
 - **Terminal screenshots** — the captured command output rendered as a terminal window. Every character in them is genuine output from the commands shown; the rendering is for legibility.
 
-```
+```text
 screenshots/
 ├── 01-linux/
 ├── 02-shell/
@@ -39,7 +52,11 @@ screenshots/
 ├── 04-git/
 ├── 05-docker-hello-world/
 ├── 06-multistage/
-└── 07-networking-volumes/
+├── 07-networking-volumes/
+├── 08-k8s-fundamentals/
+├── 09-k8s-core-objects/
+├── 10-k8s-services/
+└── 11-k8s-ingress/
 ```
 
 ## Layout
@@ -74,6 +91,23 @@ DevOps/
 │   ├── README.md
 │   └── bind-mount-demo/
 │       └── index.html
+├── 08-kubernetes-fundamentals/
+│   ├── README.md
+│   └── manifests/
+├── 09-k8s-core-objects/
+│   ├── README.md
+│   ├── manifests/           Pod, ReplicaSet, Deployment, DaemonSet, StatefulSet
+│   ├── pod-lifecycle/       twelve lifecycle situations
+│   ├── strategies/          rolling update, blue-green, canary, recreate
+│   └── troubleshooting/
+├── 10-k8s-services/
+│   ├── README.md
+│   ├── 01-clusterip/ 02-nodeport/ 03-loadbalancer/
+│   ├── 04-externalname/ 05-headless/
+│   └── troubleshooting/
+├── 11-k8s-ingress-configmaps-secrets/
+│   ├── README.md
+│   └── manifests/
 └── screenshots/
 ```
 
@@ -90,6 +124,32 @@ cd 06-docker-multistage
 docker build -t hello-multistage .
 docker run -d -p 8080:8080 --name hello-multistage hello-multistage
 curl localhost:8080
+```
+
+## Running the Kubernetes assignments
+
+```bash
+# the cluster the write-ups were produced on
+minikube start --driver=docker --nodes=2 --cpus=2 --memory=2200 --kubernetes-version=stable
+
+# 09 - watch a rolling update keep serving traffic
+kubectl apply -f 09-k8s-core-objects/strategies/01-rolling-update/
+kubectl apply -f 09-k8s-core-objects/strategies/01-rolling-update/deployment-v2.yaml
+
+# 10 - any of the five Service types
+kubectl apply -f 10-k8s-services/01-clusterip/
+
+# 11 - ConfigMap, Secret, two apps and one Ingress
+minikube addons enable ingress
+kubectl apply -f 11-k8s-ingress-configmaps-secrets/manifests/
+```
+
+On a slow connection, pre-loading the images the labs use avoids a pull inside every Pod:
+
+```bash
+for i in nginx:1.25-alpine nginx:1.27-alpine busybox:1.36 python:3.11-slim; do
+  docker pull $i && minikube image load $i
+done
 ```
 
 Port assignments for assignment 05 are in that folder's README.
